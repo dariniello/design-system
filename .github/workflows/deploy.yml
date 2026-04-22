@@ -22,9 +22,30 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Encrypt index.html with StatiCrypt
+        env:
+          STATICRYPT_PASSWORD: ${{ secrets.SITE_PASSWORD }}
+        run: |
+          if [ -z "$STATICRYPT_PASSWORD" ]; then
+            echo "::error::SITE_PASSWORD secret is not set. Add it in Settings → Secrets and variables → Actions, then re-run the workflow."
+            exit 1
+          fi
+          mkdir -p _site
+          npx --yes staticrypt index.html \
+            --password "$STATICRYPT_PASSWORD" \
+            --short \
+            --template-title "M7 Design System" \
+            --template-instructions "Enter the password to view this design system." \
+            --template-button "View" \
+            -d _site
+          # staticrypt writes _site/index.html; that's what Pages will serve
+          cp .nojekyll _site/.nojekyll
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: .
+          path: _site
       - id: deployment
         uses: actions/deploy-pages@v4
