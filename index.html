@@ -1292,7 +1292,9 @@ function Hero({ theme }) {
           A MUI-native component library, tuned to the M7 brand
         </h1>
         <p style={{ ...theme.typography.body1, color: theme.tokens.text.secondary, maxWidth: 720, margin: 0, marginBottom: sp[6] }}>
-          Built on top of your current theme in <code style={{ fontFamily: 'ui-monospace, monospace', background: theme.tokens.surfaces.subtle, padding: '2px 6px', borderRadius: 4 }}>frontend/src/common/theming/</code>. Every gap between your custom tokens and MUI v5's design system is filled here.
+          Theming updates to our current MUI component library. Addresses gaps in current token conventions to align us closer to MUI standardization. The theme also expands brand color ranges and offers support for dark mode.
+          <br /><br />
+          Components are for theme previewing only, this is not intended to replace our Storybook implementation.
         </p>
         <div style={{ display: 'flex', gap: sp[3] }}>
           <Button theme={theme} variant="contained" endIcon={Icon.arrowRight()} onClick={() => window.open('https://github.com/dariniello/design-system', '_blank', 'noopener')}>View package</Button>
