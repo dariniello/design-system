@@ -1,0 +1,1416 @@
+<!doctype html>
+<!--
+  M7 Design System v1.1 — Self-contained spec & dev handoff
+  ──────────────────────────────────────────────────────────
+  This is a single-file bundle. Open it in any browser — no server required.
+  All scripts are inlined; the only external dependencies are:
+    · React 18 / ReactDOM 18 / Babel standalone (unpkg CDN)
+    · Inter + Inter Tight fonts (Google Fonts CDN)
+
+  FOR ENGINEERS
+  ─────────────
+  • Scroll to the "Engineering handoff" section for the generated theme.ts snippet
+    and the legacy → new token alias map.
+  • The "Tweaks" panel (bottom-right corner button) lets you swap neutral scale,
+    shift color set, and light/dark mode — the theme.ts snippet updates live.
+  • TypeScript module augmentation required for `lighter` and `tertiary` palette
+    extensions — see the Custom Extension card in the Color section.
+  • This spec targets MUI v5. Do not use v6/v7/v9 APIs.
+
+  FOR DESIGNERS
+  ─────────────
+  • Use the light/dark toggle in the header to preview mode-aware tokens.
+  • The Color section shows the full 10-stop scales with mode-aware role badges
+    (lighter / light / main / dark). Badges move when you flip modes.
+  • Shift colors live in their own section and are separate from the MUI palette.
+
+  SOURCE FILES (in project/tokens/)
+  ───────────────────────────────────
+  tokens-v4.js        — raw design token values (colors, type, spacing, motion)
+  theme-v2.js         — M7ThemeBuilder.buildTheme() — builds a MUI-compatible theme object
+  spec-components.jsx — primitive components (Button, Chip, TextField, etc.)
+  spec-sections.jsx   — section renderers (FoundationsColor, ComponentsButtons, etc.)
+  spec-handoff.jsx    — HandoffSection with generated theme.ts output
+  app.jsx             — App shell, Nav, Header, TweaksPanel
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=1200" />
+  <meta name="description" content="M7 Health Design System v1.1 — MUI v5 component library spec, token documentation, and engineering handoff." />
+  <title>M7 Design System v1.1</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Inter+Tight:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; font-family: "Inter", system-ui, sans-serif; }
+    body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+    code { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 0.9em; }
+    ::selection { background: rgba(91, 67, 172, 0.2); }
+    a { color: inherit; }
+    button { font-family: inherit; }
+  </style>
+
+  <!-- React 18 -->
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <!-- Babel standalone (JSX transform) -->
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       TOKEN LAYER — raw design token values
+       Source: project/tokens/tokens-v4.js
+       ═══════════════════════════════════════════════════════════════ -->
+  <script>
+// ============================================================================
+// M7 Design System — Design Tokens
+// ============================================================================
+
+const neutralScales = {
+  'brand-tinted': {
+    0:'#FFFFFF',25:'#FBFAFD',50:'#F7F6FB',100:'#EFEDF5',150:'#E5E3EC',
+    200:'#D9D7E2',300:'#BCBAC8',400:'#8F8D9E',500:'#6B6979',600:'#4F4D5B',
+    700:'#38363F',800:'#22212A',900:'#141319',1000:'#0A0910',
+  },
+  'cool': {
+    0:'#FFFFFF',25:'#FCFCFD',50:'#F7F8FA',100:'#EEF0F3',150:'#E3E6EB',
+    200:'#D5D9E0',300:'#B6BAC3',400:'#898F99',500:'#666B74',600:'#4A4E55',
+    700:'#34373C',800:'#1F2125',900:'#121316',1000:'#09090B',
+  },
+  'warm': {
+    0:'#FFFFFF',25:'#FCFBFA',50:'#F8F7F5',100:'#F0EFEB',150:'#E6E4DF',
+    200:'#D8D5CE',300:'#BBB7AE',400:'#908C82',500:'#6C6860',600:'#4F4C46',
+    700:'#383631',800:'#23221F',900:'#141413',1000:'#09090A',
+  },
+};
+
+const brand = {
+  purple: { 50:'#F4F1FC',100:'#E6DFF8',200:'#CEC1F0',300:'#B09CE4',400:'#8A72D3',500:'#5B43AC',600:'#4C378F',700:'#3C2B72',800:'#2D2056',900:'#1E163A',950:'#120C24' },
+  // Tertiary — derived from $brandGreen #CAF036 (sits at the 400 stop as the brand anchor)
+  green: { 50:'#FAFDE8',100:'#F2FBC2',200:'#E6F78C',300:'#D8F35A',400:'#CAF036',500:'#A8CE1D',600:'#86A516',700:'#647B14',800:'#465411',900:'#2D3609',950:'#1A1F05' },
+  purpleLight: '#A4ADED',
+};
+
+const semantics = {
+  // Light mode — main is the darker, saturated tone for strong contrast on white
+  success: { lighter:'#E7F5E5', light:'#BFD1A4', main:'#2E7D32', dark:'#1F5622', contrastText:'#FFFFFF' },
+  warning: { lighter:'#FFF4E5', light:'#FFC179', main:'#E59A04', dark:'#8A5A00', contrastText:'#321800' },
+  error:   { lighter:'#FFDBDB', light:'#EBB9B9', main:'#D32F2F', dark:'#991C1C', contrastText:'#FFFFFF' },
+  info:    { lighter:'#D6F0FF', light:'#8DCDF5', main:'#1B82C2', dark:'#0F5A88', contrastText:'#FFFFFF' },
+};
+
+// Dark mode — main is ~2 stops lighter for lift against dark surfaces.
+// `lighter` flips to a deep tinted background that works under colored text.
+// `dark` inverts — in dark mode, hover/pressed gets LIGHTER, not darker.
+const semanticsDark = {
+  success: { lighter:'#1A3A1E', light:'#2E7D32', main:'#7FC27F', dark:'#B4DDB4', contrastText:'#0A1F0C' },
+  warning: { lighter:'#3A2A05', light:'#8A5A00', main:'#F5C062', dark:'#FFDBA3', contrastText:'#2A1C00' },
+  error:   { lighter:'#3D1515', light:'#991C1C', main:'#EB8080', dark:'#F5B3B3', contrastText:'#1F0808' },
+  info:    { lighter:'#0B2A3D', light:'#0F5A88', main:'#7BC4EB', dark:'#B5DEF3', contrastText:'#081825' },
+};
+
+const shiftColorSets = {
+  legacy: {
+    day:{bg:'#FFEBB8',fg:'#5C4200',accent:'#FFD059'},
+    night:{bg:'#EBEAFD',fg:'#2D2056',accent:'#B4B2D3'},
+    block:{bg:'#FFDBDB',fg:'#5C1F1F',accent:'#D79F9F'},
+    vacation:{bg:'#F1FFDB',fg:'#2B4210',accent:'#C4D9A0'},
+    education:{bg:'#C4ECE2',fg:'#0F4033',accent:'#7FC7B5'},
+    school:{bg:'#E7B3F4',fg:'#4A1858',accent:'#C98CD8'},
+    floated:{bg:'#FFB8ED',fg:'#5A1B49',accent:'#E689C9'},
+  },
+  refined: {
+    day:{bg:'#FCE6AC',fg:'#4A3400',accent:'#E8B744'},
+    night:{bg:'#E4E2F7',fg:'#2A1E5E',accent:'#9A97C8'},
+    block:{bg:'#F9D2D2',fg:'#631B1B',accent:'#C48686'},
+    vacation:{bg:'#E6F4C8',fg:'#2E4512',accent:'#A7C283'},
+    education:{bg:'#BEE2D6',fg:'#113E32',accent:'#73B8A5'},
+    school:{bg:'#DDA8EF',fg:'#441353',accent:'#B17AC1'},
+    floated:{bg:'#F5A8E0',fg:'#58163F',accent:'#D274B6'},
+  },
+};
+
+const type = {
+  fontFamily: {
+    body: '"Inter", "Roboto", system-ui, -apple-system, sans-serif',
+    display: '"Inter Tight", "Inter", system-ui, -apple-system, sans-serif',
+    mono: 'ui-monospace, "SF Mono", "Menlo", monospace',
+  },
+  scale: {
+    displayLg:{size:4.5,lh:1.02,ls:-0.04,w:500,family:'display'},
+    displayMd:{size:3.375,lh:1.05,ls:-0.035,w:500,family:'display'},
+    displaySm:{size:2.5,lh:1.1,ls:-0.03,w:500,family:'display'},
+    h1:{size:2.25,lh:1.15,ls:-0.022,w:600,family:'body'},
+    h2:{size:1.875,lh:1.2,ls:-0.02,w:600,family:'body'},
+    h3:{size:1.5,lh:1.25,ls:-0.015,w:600,family:'body'},
+    h4:{size:1.25,lh:1.3,ls:-0.01,w:600,family:'body'},
+    h5:{size:1.125,lh:1.35,ls:-0.005,w:600,family:'body'},
+    h6:{size:1.0,lh:1.4,ls:0,w:600,family:'body'},
+    subtitle1:{size:1.0,lh:1.5,ls:0,w:500,family:'body'},
+    subtitle2:{size:0.875,lh:1.5,ls:0,w:500,family:'body'},
+    body1:{size:1.0,lh:1.55,ls:0,w:400,family:'body'},
+    body1bold:{size:1.0,lh:1.55,ls:0,w:600,family:'body'},
+    body1SemiBold:{size:1.0,lh:1.55,ls:0,w:500,family:'body'},
+    body2:{size:0.875,lh:1.55,ls:0,w:400,family:'body'},
+    small:{size:0.875,lh:1.45,ls:0,w:400,family:'body'},
+    smallBold:{size:0.875,lh:1.45,ls:0,w:600,family:'body'},
+    shy:{size:0.875,lh:1.45,ls:0,w:500,family:'body'},
+    xSmall:{size:0.75,lh:1.4,ls:0.005,w:400,family:'body'},
+    caption:{size:0.75,lh:1.4,ls:0.01,w:400,family:'body'},
+    overline:{size:0.6875,lh:1.3,ls:0.08,w:600,family:'body'},
+    button:{size:0.875,lh:1.2,ls:0,w:500,family:'body'},
+  },
+};
+
+const spacing = { 0:'0px',0.5:'2px',1:'4px',1.5:'6px',2:'8px',3:'12px',4:'16px',5:'20px',6:'24px',8:'32px',10:'40px',12:'48px',16:'64px',20:'80px',24:'96px' };
+const radius = { none:'0px',xs:'2px',sm:'4px',md:'8px',lg:'12px',xl:'16px',pill:'999px',circle:'50%' };
+const shadow = {
+  none:'none',
+  sm:'0 1px 2px 0 rgb(20 19 25 / 0.05)',
+  md:'0 2px 6px -1px rgb(20 19 25 / 0.08), 0 1px 3px -1px rgb(20 19 25 / 0.06)',
+  lg:'0 8px 24px -4px rgb(20 19 25 / 0.12), 0 3px 6px -2px rgb(20 19 25 / 0.06)',
+  xl:'0 24px 48px -12px rgb(20 19 25 / 0.18), 0 8px 16px -4px rgb(20 19 25 / 0.08)',
+  focus:'0 0 0 3px rgb(91 67 172 / 0.25)',
+};
+const motion = {
+  duration:{ instant:'0ms',fast:'120ms',base:'200ms',slow:'320ms',slower:'500ms' },
+  ease:{
+    standard:'cubic-bezier(0.2, 0, 0, 1)',
+    emphasized:'cubic-bezier(0.2, 0, 0, 1.2)',
+    out:'cubic-bezier(0, 0, 0, 1)',
+    in:'cubic-bezier(0.3, 0, 1, 1)',
+    linear:'linear',
+  },
+};
+
+window.M7Tokens = { neutralScales, brand, semantics, semanticsDark, shiftColorSets, type, spacing, radius, shadow, motion };
+  </script>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       THEME BUILDER — builds a MUI-compatible theme object from tokens
+       Source: project/tokens/theme-v2.js
+       ═══════════════════════════════════════════════════════════════ -->
+  <script>
+// M7 Design System — Theme Builder (v1.1)
+window.M7ThemeBuilder = (function () {
+  function buildTypography(T) {
+    const s = T.type.scale;
+    const fam = T.type.fontFamily;
+    const famOf = (k) => k === 'display' ? fam.display : fam.body;
+    const pack = (v) => ({
+      fontFamily: famOf(v.family),
+      fontWeight: v.w,
+      fontSize: `${v.size}rem`,
+      lineHeight: v.lh,
+      letterSpacing: `${v.ls}em`,
+    });
+    const out = { fontFamily: fam.body, htmlFontSize: 16, fontSize: 14 };
+    Object.keys(s).forEach(k => { out[k] = pack(s[k]); });
+    out.button = { ...out.button, textTransform: 'none' };
+    out.overline = { ...out.overline, textTransform: 'uppercase' };
+    return out;
+  }
+
+  function buildTheme(opts) {
+    const T = window.M7Tokens;
+    const { neutralKey = 'brand-tinted', shiftKey = 'refined', mode = 'light' } = opts || {};
+    const N = T.neutralScales[neutralKey];
+    const S = T.shiftColorSets[shiftKey];
+    const isDark = mode === 'dark';
+
+    const surfaces = isDark
+      ? { canvas: N[900], panel: N[800], raised: N[700], overlay: 'rgba(10,9,16,0.72)', subtle: N[800], hover: N[700], selected: T.brand.purple[900] }
+      : { canvas: N[0], panel: N[0], raised: N[0], overlay: 'rgba(20,19,25,0.48)', subtle: N[50], hover: N[100], selected: T.brand.purple[50] };
+    const text = isDark
+      ? { primary: N[50], secondary: N[200], muted: N[400], disabled: N[500], inverse: N[900], onBrand: '#FFFFFF' }
+      : { primary: N[900], secondary: N[700], muted: N[500], disabled: N[400], inverse: N[0], onBrand: '#FFFFFF' };
+    const border = isDark
+      ? { subtle: N[700], default: N[600], strong: N[500], brand: T.brand.purple[300], focus: T.brand.purple[300] }
+      : { subtle: N[100], default: N[200], strong: N[300], brand: T.brand.purple[500], focus: T.brand.purple[500] };
+
+    // Primary (purple) — main lifts from 500 → 300 in dark; dark flips lighter (tonal inversion)
+    const primary = isDark
+      ? { lighter: T.brand.purple[900], light: T.brand.purple[200], main: T.brand.purple[300], dark: T.brand.purple[100], contrastText: T.brand.purple[950] }
+      : { lighter: T.brand.purple[50],  light: T.brand.purple[300], main: T.brand.purple[500], dark: T.brand.purple[700], contrastText: '#FFFFFF' };
+
+    // Secondary (neutral) — inverts across modes; light in dark, dark in light
+    const secondary = isDark
+      ? { lighter: N[700], light: N[400], main: N[50],  dark: N[25],   contrastText: N[900] }
+      : { lighter: N[100], light: N[300], main: N[900], dark: N[1000], contrastText: '#FFFFFF' };
+
+    // Tertiary (green) — #CAF036 is already high-luminance; desaturate/shade back 1 stop on dark
+    // so it doesn't vibrate. lighter flips to a deep tinted background.
+    const tertiary = isDark
+      ? { lighter: T.brand.green[900], light: T.brand.green[600], main: T.brand.green[300], dark: T.brand.green[100], contrastText: T.brand.green[950] }
+      : { lighter: T.brand.green[50],  light: T.brand.green[200], main: T.brand.green[400], dark: T.brand.green[700], contrastText: '#1E163A' };
+
+    const sem = isDark ? T.semanticsDark : T.semantics;
+
+    return {
+      palette: {
+        mode,
+        primary, secondary, tertiary,
+        error: sem.error, warning: sem.warning, info: sem.info, success: sem.success,
+        grey: { 50:N[50],100:N[100],200:N[200],300:N[300],400:N[400],500:N[500],600:N[600],700:N[700],800:N[800],900:N[900] },
+        text: { primary: text.primary, secondary: text.secondary, disabled: text.disabled, muted: text.muted, inverse: text.inverse, main: text.primary },
+        background: { default: surfaces.canvas, paper: surfaces.panel },
+        divider: border.subtle,
+      },
+      typography: buildTypography(T),
+      shape: { borderRadius: 8 },
+      spacing: 4,
+      shadows: (() => { const a = ['none', T.shadow.sm, T.shadow.md, T.shadow.lg, T.shadow.xl]; while (a.length < 25) a.push(T.shadow.xl); return a; })(),
+      transitions: {
+        duration: { shortest: 120, shorter: 120, short: 200, standard: 200, complex: 320, enteringScreen: 200, leavingScreen: 120 },
+        easing: { easeInOut: T.motion.ease.standard, easeOut: T.motion.ease.out, easeIn: T.motion.ease.in, sharp: T.motion.ease.emphasized },
+      },
+      tokens: { neutrals: N, surfaces, text, border, radius: T.radius, shadow: T.shadow, motion: T.motion, spacing: T.spacing, shift: S },
+    };
+  }
+
+  return { buildTheme };
+})();
+  </script>
+</head>
+<body>
+  <div id="root"></div>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       PRIMITIVE COMPONENTS
+       Source: project/tokens/spec-components.jsx
+       Exports: Section, TokenLabel, Swatch, Button, Icon, Chip,
+                TextField, Switch, Checkbox, Radio, Alert, Card, TooltipDemo
+       ═══════════════════════════════════════════════════════════════ -->
+  <script type="text/babel">
+const { useState, useMemo, useEffect } = React;
+
+function Section({ id, title, eyebrow, description, children, theme }) {
+  const t = theme;
+  return (
+    <section id={id} style={{ padding: `${t.tokens.spacing[16]} ${t.tokens.spacing[10]}`, borderBottom: `1px solid ${t.tokens.border.subtle}` }}>
+      <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+        {eyebrow && <div style={{ ...t.typography.overline, color: t.palette.primary.main, marginBottom: t.tokens.spacing[3] }}>{eyebrow}</div>}
+        <h2 style={{ ...t.typography.h2, color: t.tokens.text.primary, margin: 0, marginBottom: description ? t.tokens.spacing[3] : t.tokens.spacing[10] }}>{title}</h2>
+        {description && <p style={{ ...t.typography.body1, color: t.tokens.text.secondary, maxWidth: 720, marginTop: 0, marginBottom: t.tokens.spacing[10] }}>{description}</p>}
+        {children}
+      </div>
+    </section>
+  );
+}
+
+function TokenLabel({ name, value, theme }) {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
+      <span style={{ ...theme.typography.xSmall, color: theme.tokens.text.primary, fontFamily: 'ui-monospace, monospace' }}>{name}</span>
+      <span style={{ ...theme.typography.xSmall, color: theme.tokens.text.muted, fontFamily: 'ui-monospace, monospace' }}>{value}</span>
+    </div>
+  );
+}
+
+function Swatch({ color, name, value, theme, large, onBrand }) {
+  const size = large ? 120 : 72;
+  return (
+    <div style={{ width: '100%' }}>
+      <div style={{ height: size, background: color, borderRadius: theme.tokens.radius.md, border: `1px solid ${theme.tokens.border.subtle}`, position: 'relative', overflow: 'hidden' }}>
+        {onBrand && <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: onBrand, ...theme.typography.smallBold }}>Aa</div>}
+      </div>
+      <div style={{ marginTop: theme.tokens.spacing[2] }}>
+        <div style={{ ...theme.typography.small, color: theme.tokens.text.primary, fontWeight: 500 }}>{name}</div>
+        <div style={{ ...theme.typography.xSmall, color: theme.tokens.text.muted, fontFamily: 'ui-monospace, monospace' }}>{value}</div>
+      </div>
+    </div>
+  );
+}
+
+function Button({ variant = 'contained', color = 'primary', size = 'medium', disabled, children, startIcon, endIcon, theme, fullWidth, style, onClick }) {
+  const pal = theme.palette[color] || theme.palette.primary;
+  const heights = { small: 30, medium: 36, large: 42 };
+  const px = { small: 10, medium: 16, large: 22 };
+  const base = {
+    display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+    height: heights[size], padding: `0 ${px[size]}px`,
+    borderRadius: theme.tokens.radius.sm,
+    fontFamily: theme.typography.fontFamily, fontSize: size === 'small' ? '0.8125rem' : '0.875rem', fontWeight: 500,
+    cursor: disabled ? 'not-allowed' : 'pointer', textTransform: 'none',
+    transition: `all ${theme.tokens.motion.duration.fast} ${theme.tokens.motion.ease.standard}`,
+    border: '1px solid transparent', opacity: disabled ? 0.5 : 1,
+    width: fullWidth ? '100%' : undefined, whiteSpace: 'nowrap', ...style,
+  };
+  const variants = {
+    contained: { background: pal.main, color: pal.contrastText, boxShadow: theme.tokens.shadow.sm },
+    outlined: { background: 'transparent', color: pal.main, borderColor: pal.main },
+    text: { background: 'transparent', color: pal.main },
+    soft: { background: pal.lighter || theme.tokens.surfaces.subtle, color: pal.dark || pal.main },
+  };
+  const iconWrap = (slot) => slot ? (
+    <span style={{ display: 'inline-flex', alignItems: 'center', color: 'inherit' }} aria-hidden="true">{slot}</span>
+  ) : null;
+  return (
+    <button style={{ ...base, ...variants[variant] }} disabled={disabled} onClick={onClick}>
+      {iconWrap(startIcon)}{children}{iconWrap(endIcon)}
+    </button>
+  );
+}
+
+const Icon = {
+  plus: (c='currentColor') => <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 3v10M3 8h10" stroke={c} strokeWidth="1.6" strokeLinecap="round"/></svg>,
+  arrowRight: (c='currentColor') => <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10m-4-4l4 4-4 4" stroke={c} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>,
+  check: (c='currentColor') => <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8.5l3.5 3L13 5" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>,
+  close: (c='currentColor') => <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 4l8 8M12 4l-8 8" stroke={c} strokeWidth="1.6" strokeLinecap="round"/></svg>,
+  search: (c='currentColor') => <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="4.5" stroke={c} strokeWidth="1.6"/><path d="M10.5 10.5L14 14" stroke={c} strokeWidth="1.6" strokeLinecap="round"/></svg>,
+  warn: (c='currentColor') => <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2l7 12H1L8 2z" stroke={c} strokeWidth="1.6" strokeLinejoin="round"/><path d="M8 7v3M8 12v.01" stroke={c} strokeWidth="1.6" strokeLinecap="round"/></svg>,
+  info: (c='currentColor') => <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke={c} strokeWidth="1.6"/><path d="M8 7v4M8 5v.01" stroke={c} strokeWidth="1.6" strokeLinecap="round"/></svg>,
+  tweaks: (c='currentColor') => <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M5 8h6M7 12h2" stroke={c} strokeWidth="1.6" strokeLinecap="round"/></svg>,
+};
+
+function Chip({ label, color = 'default', variant = 'filled', size = 'medium', onDelete, theme, icon }) {
+  const palMap = {
+    default: { bg: theme.tokens.surfaces.subtle, fg: theme.tokens.text.primary, border: theme.tokens.border.default },
+    primary: { bg: theme.palette.primary.lighter, fg: theme.palette.primary.dark, border: theme.palette.primary.light },
+    success: { bg: theme.palette.success.lighter, fg: theme.palette.success.dark, border: theme.palette.success.light },
+    warning: { bg: theme.palette.warning.lighter, fg: theme.palette.warning.dark, border: theme.palette.warning.light },
+    error:   { bg: theme.palette.error.lighter,   fg: theme.palette.error.dark,   border: theme.palette.error.light },
+    info:    { bg: theme.palette.info.lighter,    fg: theme.palette.info.dark,    border: theme.palette.info.light },
+  };
+  const p = palMap[color] || palMap.default;
+  const h = size === 'small' ? 22 : 28;
+  return (
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', gap: 6, height: h, padding: `0 ${size === 'small' ? 8 : 10}px`,
+      borderRadius: theme.tokens.radius.pill,
+      background: variant === 'outlined' ? 'transparent' : p.bg,
+      color: p.fg, border: variant === 'outlined' ? `1px solid ${p.border}` : '1px solid transparent',
+      ...theme.typography.small, fontSize: size === 'small' ? '0.75rem' : '0.8125rem', fontWeight: 500, whiteSpace: 'nowrap',
+    }}>
+      {icon}{label}
+      {onDelete && <span style={{ cursor: 'pointer', display: 'flex', opacity: 0.7 }}>{Icon.close(p.fg)}</span>}
+    </span>
+  );
+}
+
+function TextField({ label, placeholder, value, helperText, error, disabled, theme, startAdornment, endAdornment, fullWidth, size = 'medium' }) {
+  const [focused, setFocused] = useState(false);
+  const h = size === 'small' ? 36 : 42;
+  const borderColor = error ? theme.palette.error.main : focused ? theme.palette.primary.main : theme.tokens.border.default;
+  return (
+    <div style={{ width: fullWidth ? '100%' : 240 }}>
+      {label && <label style={{ ...theme.typography.small, color: theme.tokens.text.secondary, display: 'block', marginBottom: 6, fontWeight: 500 }}>{label}</label>}
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 8, height: h, padding: '0 12px',
+        background: disabled ? theme.tokens.surfaces.subtle : theme.tokens.surfaces.panel,
+        border: `1px solid ${borderColor}`, borderRadius: theme.tokens.radius.sm,
+        boxShadow: focused ? `0 0 0 3px ${theme.palette.primary.main}20` : 'none',
+        transition: `all ${theme.tokens.motion.duration.fast} ${theme.tokens.motion.ease.standard}`, opacity: disabled ? 0.6 : 1,
+      }}>
+        {startAdornment}
+        <input defaultValue={value} placeholder={placeholder} disabled={disabled}
+          onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
+          style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', fontFamily: theme.typography.fontFamily, fontSize: '0.875rem', color: theme.tokens.text.primary, minWidth: 0 }}
+        />
+        {endAdornment}
+      </div>
+      {helperText && <div style={{ ...theme.typography.xSmall, color: error ? theme.palette.error.main : theme.tokens.text.muted, marginTop: 6 }}>{helperText}</div>}
+    </div>
+  );
+}
+
+function Switch({ checked: initial = false, disabled, theme, label }) {
+  const [checked, setChecked] = useState(initial);
+  const on = checked && !disabled;
+  return (
+    <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.5 : 1 }}>
+      <span onClick={() => !disabled && setChecked(!checked)} style={{
+        width: 36, height: 20, borderRadius: 999,
+        background: on ? theme.palette.primary.light : theme.tokens.border.strong, position: 'relative',
+        transition: `background ${theme.tokens.motion.duration.fast} ${theme.tokens.motion.ease.standard}`,
+      }}>
+        <span style={{ position: 'absolute', top: 2, left: on ? 18 : 2, width: 16, height: 16, borderRadius: 999,
+          background: on ? theme.palette.primary.main : '#fff', boxShadow: theme.tokens.shadow.sm,
+          transition: `left ${theme.tokens.motion.duration.fast} ${theme.tokens.motion.ease.standard}` }}/>
+      </span>
+      {label && <span style={{ ...theme.typography.small, color: theme.tokens.text.primary }}>{label}</span>}
+    </label>
+  );
+}
+
+function Checkbox({ checked: initial = false, disabled, theme, label }) {
+  const [checked, setChecked] = useState(initial);
+  const on = checked && !disabled;
+  return (
+    <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.5 : 1 }}>
+      <span onClick={() => !disabled && setChecked(!checked)} style={{
+        width: 18, height: 18, borderRadius: theme.tokens.radius.xs,
+        background: on ? theme.palette.primary.main : 'transparent',
+        border: `1.5px solid ${on ? theme.palette.primary.main : theme.tokens.border.strong}`,
+        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+        transition: `all ${theme.tokens.motion.duration.fast} ${theme.tokens.motion.ease.standard}`,
+      }}>
+        {on && <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M3 8.5l3.5 3L13 5" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+      </span>
+      {label && <span style={{ ...theme.typography.small, color: theme.tokens.text.primary }}>{label}</span>}
+    </label>
+  );
+}
+
+function Radio({ checked, disabled, theme, label }) {
+  return (
+    <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.5 : 1 }}>
+      <span style={{ width: 18, height: 18, borderRadius: 999, border: `1.5px solid ${checked ? theme.palette.primary.main : theme.tokens.border.strong}`, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+        {checked && <span style={{ width: 10, height: 10, borderRadius: 999, background: theme.palette.primary.main }}/>}
+      </span>
+      {label && <span style={{ ...theme.typography.small, color: theme.tokens.text.primary }}>{label}</span>}
+    </label>
+  );
+}
+
+function Alert({ severity = 'info', title, children, theme, variant = 'standard' }) {
+  const map = {
+    success: { pal: theme.palette.success, icon: Icon.check },
+    warning: { pal: theme.palette.warning, icon: Icon.warn },
+    error: { pal: theme.palette.error, icon: Icon.warn },
+    info: { pal: theme.palette.info, icon: Icon.info },
+  };
+  const { pal, icon } = map[severity];
+  const filled = variant === 'filled';
+  return (
+    <div style={{ display: 'flex', gap: 12, padding: '12px 14px', borderRadius: theme.tokens.radius.md,
+      background: filled ? pal.main : pal.lighter, color: filled ? pal.contrastText : pal.dark,
+      border: filled ? 'none' : `1px solid ${pal.light}` }}>
+      <div style={{ flexShrink: 0, marginTop: 2 }}>{icon(filled ? pal.contrastText : pal.dark)}</div>
+      <div>
+        {title && <div style={{ ...theme.typography.smallBold, marginBottom: 2 }}>{title}</div>}
+        <div style={{ ...theme.typography.small }}>{children}</div>
+      </div>
+    </div>
+  );
+}
+
+function Card({ children, theme, padding = 16, elevated }) {
+  return (
+    <div style={{ background: theme.tokens.surfaces.panel, border: `1px solid ${theme.tokens.border.subtle}`,
+      borderRadius: theme.tokens.radius.lg, padding, boxShadow: elevated ? theme.tokens.shadow.md : 'none' }}>
+      {children}
+    </div>
+  );
+}
+
+function TooltipDemo({ theme, children, label }) {
+  return (
+    <div style={{ position: 'relative', display: 'inline-block' }}>
+      {children}
+      <div style={{ position: 'absolute', bottom: 'calc(100% + 8px)', left: '50%', transform: 'translateX(-50%)',
+        background: theme.tokens.neutrals[900], color: '#fff', padding: '4px 8px', borderRadius: theme.tokens.radius.xs,
+        fontSize: '0.6875rem', whiteSpace: 'nowrap' }}>
+        {label}
+        <div style={{ position: 'absolute', top: '100%', left: '50%', transform: 'translateX(-50%)', width: 0, height: 0,
+          borderLeft: '4px solid transparent', borderRight: '4px solid transparent', borderTop: `4px solid ${theme.tokens.neutrals[900]}` }}/>
+      </div>
+    </div>
+  );
+}
+
+Object.assign(window, { Section, TokenLabel, Swatch, Button, Icon, Chip, TextField, Switch, Checkbox, Radio, Alert, Card, TooltipDemo });
+  </script>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       SECTION RENDERERS — foundations + component showcases
+       Source: project/tokens/spec-sections.jsx
+       ═══════════════════════════════════════════════════════════════ -->
+  <script type="text/babel">
+function FoundationsColor({ theme }) {
+  const N = theme.tokens.neutrals;
+  const T = window.M7Tokens;
+  const purpleStops = [50,100,200,300,400,500,600,700,800,900,950];
+  const greenStops  = [50,100,200,300,400,500,600,700,800,900,950];
+  const neutralOrder = [0, 25, 50, 100, 150, 200, 300, 400, 500, 600, 700, 800, 900, 1000];
+  const sp = theme.tokens.spacing;
+
+  const roleMapFor = (pal, scale) => {
+    const map = {};
+    ['lighter', 'light', 'main', 'dark'].forEach(role => {
+      const hex = (pal[role] || '').toLowerCase();
+      const match = Object.entries(scale).find(([, v]) => String(v).toLowerCase() === hex);
+      if (match) map[match[0]] = role;
+    });
+    return map;
+  };
+
+  const FullScale = ({ title, eyebrow, stops, get, roleMap, accent, note }) => (
+    <div style={{ marginBottom: sp[10] }}>
+      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: sp[3], gap: sp[4], flexWrap: 'wrap' }}>
+        <div>
+          {eyebrow && <div style={{ ...theme.typography.overline, color: accent || theme.tokens.text.muted, marginBottom: 2 }}>{eyebrow}</div>}
+          <h3 style={{ ...theme.typography.h4, color: theme.tokens.text.primary, margin: 0 }}>{title}</h3>
+        </div>
+        {note && <span style={{ ...theme.typography.xSmall, color: theme.tokens.text.muted, fontFamily: 'ui-monospace, monospace' }}>{note}</span>}
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: `repeat(${stops.length}, 1fr)`, gap: sp[2] }}>
+        {stops.map(k => {
+          const v = get(k);
+          const role = roleMap ? roleMap[k] : null;
+          const isMain = role === 'main';
+          const isRoled = !!role;
+          const badgeBg = isMain ? theme.tokens.text.primary : (theme.palette.mode === 'dark' ? theme.tokens.surfaces.raised : theme.tokens.surfaces.panel);
+          const badgeFg = isMain ? theme.tokens.surfaces.panel : theme.tokens.text.secondary;
+          const badgeBorder = isMain ? theme.tokens.text.primary : theme.tokens.border.strong;
+          return (
+            <div key={k} style={{ position: 'relative' }}>
+              <div style={{ height: 96, background: v, borderRadius: theme.tokens.radius.md,
+                border: isMain ? `2px solid ${theme.tokens.text.primary}` : `1px solid ${theme.tokens.border.subtle}`,
+                outline: isMain ? `2px solid ${theme.tokens.surfaces.panel}` : 'none', outlineOffset: -4,
+                opacity: isRoled || !roleMap ? 1 : 0.92 }} />
+              <div style={{ marginTop: sp[2] }}>
+                <div style={{ ...theme.typography.small, color: theme.tokens.text.primary, fontWeight: isMain ? 700 : 500, fontFamily: 'ui-monospace, monospace' }}>{k}</div>
+                <div style={{ ...theme.typography.xSmall, color: theme.tokens.text.muted, fontFamily: 'ui-monospace, monospace' }}>{v}</div>
+              </div>
+              {isRoled && (
+                <div style={{ position: 'absolute', top: 6, right: 6, padding: '2px 7px', borderRadius: 999,
+                  background: badgeBg, color: badgeFg, border: `1px solid ${badgeBorder}`,
+                  fontFamily: theme.typography.fontFamily, fontSize: 10, fontWeight: 600, letterSpacing: 0.4, lineHeight: 1.2 }}>{role}</div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+
+  const FourStopGrid = ({ keys }) => (
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: sp[6] }}>
+      {keys.map(key => {
+        const pal = theme.palette[key];
+        return (
+          <div key={key}>
+            <h4 style={{ ...theme.typography.h6, color: theme.tokens.text.primary, margin: 0, marginBottom: sp[3], textTransform: 'capitalize' }}>{key}</h4>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: sp[2] }}>
+              <Swatch name="lighter" value={pal.lighter} color={pal.lighter} theme={theme} />
+              <Swatch name="light" value={pal.light} color={pal.light} theme={theme} />
+              <Swatch name="main" value={pal.main} color={pal.main} theme={theme} onBrand={pal.contrastText} />
+              <Swatch name="dark" value={pal.dark} color={pal.dark} theme={theme} onBrand={pal.contrastText} />
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+
+  return (
+    <Section id="color" eyebrow="Foundations" title="Color" theme={theme}
+      description="Full 10-stop scales for the three brand colors (Primary · Tertiary) plus a 14-stop neutral scale. Every branded and semantic role also exposes a 4-stop ramp — lighter / light / main / dark — mapped from the full scales for use in UI tokens.">
+
+      <FullScale title="Primary · Purple" eyebrow="Brand · 10 stops" stops={purpleStops} get={k => T.brand.purple[k]} roleMap={roleMapFor(theme.palette.primary, T.brand.purple)} accent={theme.palette.primary.main} note={theme.palette.mode === 'dark' ? 'dark mode · main lifts to purple.300' : 'main → purple.500 · #5B43AC'} />
+      <FullScale title="Tertiary · Green" eyebrow="Brand · 10 stops" stops={greenStops} get={k => T.brand.green[k]} roleMap={roleMapFor(theme.palette.tertiary, T.brand.green)} accent={T.brand.green[600]} note={theme.palette.mode === 'dark' ? 'dark mode · main steps back to green.300' : '$brandGreen #CAF036 → green.400'} />
+      <FullScale title="Neutrals" eyebrow="14 stops · 0 → 1000" stops={neutralOrder} get={k => N[k]} accent={theme.tokens.text.muted} note="Linear-inspired · brand-tinted by default" />
+
+      <div style={{ marginBottom: sp[10], display: 'grid', gridTemplateColumns: '1.1fr 1fr', gap: sp[6], alignItems: 'stretch' }}>
+        <Card theme={theme} padding={sp[6]}>
+          <div style={{ ...theme.typography.overline, color: theme.palette.primary.main, marginBottom: sp[2] }}>Pattern · 4 stops</div>
+          <h3 style={{ ...theme.typography.h4, margin: 0, marginBottom: sp[3] }}>lighter · light · main · dark</h3>
+          <p style={{ ...theme.typography.body2, color: theme.tokens.text.secondary, margin: 0, marginBottom: sp[4] }}>
+            Every branded and semantic color role carries four stops so any surface — chip, alert, soft button, badge — can be composed from tokens alone, without one-off hex values. The four stops are sampled from the full 10-stop scales above.
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr', rowGap: sp[2], columnGap: sp[4], ...theme.typography.small }}>
+            <span style={{ fontFamily: 'ui-monospace, monospace', color: theme.tokens.text.primary, fontWeight: 600 }}>lighter</span>
+            <span style={{ color: theme.tokens.text.secondary }}>Tinted backgrounds — chip fills, alert backgrounds, soft button, hover on colored surfaces.</span>
+            <span style={{ fontFamily: 'ui-monospace, monospace', color: theme.tokens.text.primary, fontWeight: 600 }}>light</span>
+            <span style={{ color: theme.tokens.text.secondary }}>Borders and dividers on tinted surfaces. Disabled states of <code style={{ fontFamily: 'ui-monospace, monospace' }}>main</code>.</span>
+            <span style={{ fontFamily: 'ui-monospace, monospace', color: theme.tokens.text.primary, fontWeight: 600 }}>main</span>
+            <span style={{ color: theme.tokens.text.secondary }}>The canonical color — filled buttons, icons, active text.</span>
+            <span style={{ fontFamily: 'ui-monospace, monospace', color: theme.tokens.text.primary, fontWeight: 600 }}>dark</span>
+            <span style={{ color: theme.tokens.text.secondary }}>Text on <code style={{ fontFamily: 'ui-monospace, monospace' }}>lighter</code> backgrounds (WCAG AA). Hover/pressed state of <code style={{ fontFamily: 'ui-monospace, monospace' }}>main</code>.</span>
+          </div>
+        </Card>
+        <Card theme={theme} padding={sp[6]}>
+          <div style={{ ...theme.typography.overline, color: theme.palette.warning.dark, marginBottom: sp[2] }}>Custom extension</div>
+          <h3 style={{ ...theme.typography.h4, margin: 0, marginBottom: sp[3] }}>MUI v5 only ships 3 stops</h3>
+          <p style={{ ...theme.typography.body2, color: theme.tokens.text.secondary, margin: 0, marginBottom: sp[4] }}>
+            MUI's <code style={{ fontFamily: 'ui-monospace, monospace' }}>PaletteColor</code> defines <code style={{ fontFamily: 'ui-monospace, monospace' }}>light / main / dark / contrastText</code>. We extend it with <code style={{ fontFamily: 'ui-monospace, monospace' }}>lighter</code> and add <code style={{ fontFamily: 'ui-monospace, monospace' }}>tertiary</code> as a first-class palette role. Both require module augmentation in <code style={{ fontFamily: 'ui-monospace, monospace' }}>theme.ts</code>:
+          </p>
+          <pre style={{ margin: 0, padding: sp[4], background: theme.tokens.neutrals[900], color: theme.tokens.neutrals[100], borderRadius: theme.tokens.radius.sm, fontFamily: 'ui-monospace, monospace', fontSize: 12, lineHeight: 1.55, overflow: 'auto' }}>{`declare module "@mui/material/styles" {
+  interface PaletteColor {
+    lighter?: string;
+  }
+  interface SimplePaletteColorOptions {
+    lighter?: string;
+  }
+  interface Palette {
+    tertiary: PaletteColor;
+  }
+  interface PaletteOptions {
+    tertiary?: PaletteColorOptions;
+  }
+}`}</pre>
+        </Card>
+      </div>
+
+      <div style={{ marginBottom: sp[10] }}>
+        <h3 style={{ ...theme.typography.h5, color: theme.tokens.text.primary, margin: 0, marginBottom: sp[4] }}>Branded roles · 4-stop</h3>
+        <FourStopGrid keys={['primary', 'secondary', 'tertiary']} />
+      </div>
+
+      <div style={{ marginBottom: sp[10] }}>
+        <h3 style={{ ...theme.typography.h5, color: theme.tokens.text.primary, margin: 0, marginBottom: sp[4] }}>Semantic roles · 4-stop</h3>
+        <FourStopGrid keys={['success', 'warning', 'error', 'info']} />
+      </div>
+
+      <Card theme={theme} padding={sp[6]} style={{ marginBottom: sp[10] }}>
+        <div style={{ ...theme.typography.overline, color: theme.palette.tertiary.dark, marginBottom: sp[2] }}>Dark mode · Light-shifting</div>
+        <h3 style={{ ...theme.typography.h4, margin: 0, marginBottom: sp[3] }}>`main` lifts ~2 stops lighter on dark surfaces</h3>
+        <p style={{ ...theme.typography.body2, color: theme.tokens.text.secondary, margin: 0, marginBottom: sp[4], maxWidth: 720 }}>
+          Saturated mid-tones muddy against dark backgrounds and fail WCAG AA as text. Following Material 3, Linear, and Primer, every branded and semantic role remaps its 4 stops in dark mode — <code style={{ fontFamily: 'ui-monospace, monospace' }}>main</code> lifts 2 stops, <code style={{ fontFamily: 'ui-monospace, monospace' }}>lighter</code> flips to a deep tinted surface, and <code style={{ fontFamily: 'ui-monospace, monospace' }}>dark</code> inverts so hover/pressed gets <em>lighter</em>, not darker (tonal inversion).
+        </p>
+        <div style={{ display: 'grid', gridTemplateColumns: '120px repeat(4, 1fr)', rowGap: sp[2], columnGap: sp[3], alignItems: 'center' }}>
+          <div />
+          {['lighter','light','main','dark'].map(s => <div key={s} style={{ ...theme.typography.xSmall, color: theme.tokens.text.muted, fontFamily: 'ui-monospace, monospace', textTransform: 'uppercase', letterSpacing: 0.5 }}>{s}</div>)}
+          <div style={{ ...theme.typography.small, color: theme.tokens.text.secondary }}>Primary · light</div>
+          {[50,300,500,700].map(k => <div key={k} style={{ height: 40, borderRadius: 6, background: window.M7Tokens.brand.purple[k], border: `1px solid ${theme.tokens.border.subtle}` }} title={`purple.${k}`} />)}
+          <div style={{ ...theme.typography.small, color: theme.tokens.text.secondary }}>Primary · dark</div>
+          {[900,200,300,100].map((k,i) => <div key={i} style={{ height: 40, borderRadius: 6, background: window.M7Tokens.brand.purple[k], border: `1px solid ${theme.tokens.border.subtle}` }} title={`purple.${k}`} />)}
+          <div style={{ ...theme.typography.small, color: theme.tokens.text.secondary, marginTop: sp[2] }}>Tertiary · light</div>
+          {[50,200,400,700].map(k => <div key={k} style={{ height: 40, borderRadius: 6, background: window.M7Tokens.brand.green[k], border: `1px solid ${theme.tokens.border.subtle}`, marginTop: sp[2] }} title={`green.${k}`} />)}
+          <div style={{ ...theme.typography.small, color: theme.tokens.text.secondary }}>Tertiary · dark</div>
+          {[900,600,300,100].map((k,i) => <div key={i} style={{ height: 40, borderRadius: 6, background: window.M7Tokens.brand.green[k], border: `1px solid ${theme.tokens.border.subtle}` }} title={`green.${k}`} />)}
+        </div>
+        <p style={{ ...theme.typography.xSmall, color: theme.tokens.text.muted, marginTop: sp[4], marginBottom: 0 }}>
+          Toggle mode in the header to see it applied across every role (primary, secondary, tertiary, success, warning, error, info).
+        </p>
+      </Card>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: sp[6] }}>
+        <Card theme={theme} padding={sp[5]}>
+          <h4 style={{ ...theme.typography.h6, margin: 0, marginBottom: sp[3] }}>Surfaces</h4>
+          {Object.entries(theme.tokens.surfaces).map(([k, v]) => (
+            <div key={k} style={{ display: 'flex', alignItems: 'center', gap: sp[3], marginBottom: sp[2] }}>
+              <div style={{ width: 40, height: 24, background: v, border: `1px solid ${theme.tokens.border.subtle}`, borderRadius: 4 }} />
+              <div style={{ flex: 1 }}><TokenLabel name={k} value={v} theme={theme} /></div>
+            </div>
+          ))}
+        </Card>
+        <Card theme={theme} padding={sp[5]}>
+          <h4 style={{ ...theme.typography.h6, margin: 0, marginBottom: sp[3] }}>Text</h4>
+          {Object.entries(theme.tokens.text).map(([k, v]) => (
+            <div key={k} style={{ display: 'flex', alignItems: 'center', gap: sp[3], marginBottom: sp[2] }}>
+              <span style={{ ...theme.typography.body1bold, color: v, minWidth: 40 }}>Aa</span>
+              <div style={{ flex: 1 }}><TokenLabel name={k} value={v} theme={theme} /></div>
+            </div>
+          ))}
+        </Card>
+        <Card theme={theme} padding={sp[5]}>
+          <h4 style={{ ...theme.typography.h6, margin: 0, marginBottom: sp[3] }}>Borders</h4>
+          {Object.entries(theme.tokens.border).map(([k, v]) => (
+            <div key={k} style={{ display: 'flex', alignItems: 'center', gap: sp[3], marginBottom: sp[2] }}>
+              <div style={{ width: 40, height: 24, border: `2px solid ${v}`, borderRadius: 4 }} />
+              <div style={{ flex: 1 }}><TokenLabel name={k} value={v} theme={theme} /></div>
+            </div>
+          ))}
+        </Card>
+      </div>
+    </Section>
+  );
+}
+
+function FoundationsType({ theme }) {
+  const sp = theme.tokens.spacing;
+  const rows = [
+    ['displayLg', 'Display Large', 'The future of staffing'],
+    ['displayMd', 'Display Medium', 'The future of staffing'],
+    ['displaySm', 'Display Small', 'The future of staffing'],
+    ['h1', 'Heading 1', 'Shift management, reimagined'],
+    ['h2', 'Heading 2', 'Shift management, reimagined'],
+    ['h3', 'Heading 3', 'Shift management, reimagined'],
+    ['h4', 'Heading 4', 'Shift management, reimagined'],
+    ['h5', 'Heading 5', 'Shift management, reimagined'],
+    ['h6', 'Heading 6', 'Shift management, reimagined'],
+    ['subtitle1', 'Subtitle 1', 'Section header text'],
+    ['subtitle2', 'Subtitle 2', 'Section header text'],
+    ['body1', 'Body 1', 'Standard paragraph text for long-form content.'],
+    ['body1SemiBold', 'Body 1 Semibold', 'Standard paragraph text, emphasized.'],
+    ['body1bold', 'Body 1 Bold', 'Standard paragraph text, bold.'],
+    ['body2', 'Body 2', 'Secondary paragraph text.'],
+    ['small', 'Small', 'Compact body size used widely in the app.'],
+    ['smallBold', 'Small Bold', 'Compact size, emphasized.'],
+    ['shy', 'Shy', 'Metadata-like text.'],
+    ['caption', 'Caption', 'Helper text, captions.'],
+    ['xSmall', 'Extra Small', 'Dense table cells.'],
+    ['overline', 'Overline', 'CATEGORY LABEL'],
+    ['button', 'Button', 'Button label'],
+  ];
+  return (
+    <Section id="type" eyebrow="Foundations" title="Typography" theme={theme}
+      description="Inter for body, Inter Tight for display. Every variant is explicit: size · weight · line-height · letter-spacing.">
+      <div style={{ border: `1px solid ${theme.tokens.border.subtle}`, borderRadius: theme.tokens.radius.lg, overflow: 'hidden' }}>
+        {rows.map(([key, name, sample], i) => {
+          const v = theme.typography[key];
+          return (
+            <div key={key} style={{ display: 'grid', gridTemplateColumns: '200px 1fr 320px', gap: sp[6], padding: `${sp[5]} ${sp[6]}`, borderTop: i === 0 ? 'none' : `1px solid ${theme.tokens.border.subtle}`, alignItems: 'baseline' }}>
+              <div>
+                <div style={{ ...theme.typography.smallBold, color: theme.tokens.text.primary }}>{name}</div>
+                <div style={{ ...theme.typography.xSmall, color: theme.tokens.text.muted, fontFamily: 'ui-monospace, monospace' }}>typography.{key}</div>
+              </div>
+              <div style={{ ...v, color: theme.tokens.text.primary }}>{sample}</div>
+              <div style={{ ...theme.typography.xSmall, color: theme.tokens.text.muted, fontFamily: 'ui-monospace, monospace' }}>{v.fontSize} · {v.fontWeight} · lh {v.lineHeight} · ls {v.letterSpacing}</div>
+            </div>
+          );
+        })}
+      </div>
+    </Section>
+  );
+}
+
+function FoundationsSpacing({ theme }) {
+  const sp = theme.tokens.spacing;
+  const radii = theme.tokens.radius;
+  const shadows = theme.tokens.shadow;
+  const motion = theme.tokens.motion;
+  return (
+    <Section id="spacing" eyebrow="Foundations" title="Spacing, Radius, Shadow, Motion" theme={theme}
+      description="4px-base spacing scale. Trimmed radius and shadow sets. Motion tokens with durations and easing curves.">
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: sp[6], marginBottom: sp[8] }}>
+        <Card theme={theme} padding={sp[6]}>
+          <h4 style={{ ...theme.typography.h5, margin: 0, marginBottom: sp[4] }}>Spacing · 4px base</h4>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: sp[2] }}>
+            {Object.entries(sp).map(([k, v]) => (
+              <div key={k} style={{ display: 'grid', gridTemplateColumns: '80px 80px 1fr', alignItems: 'center', gap: sp[3] }}>
+                <span style={{ ...theme.typography.small, fontFamily: 'ui-monospace, monospace' }}>spacing.{k}</span>
+                <span style={{ ...theme.typography.xSmall, color: theme.tokens.text.muted, fontFamily: 'ui-monospace, monospace' }}>{v}</span>
+                <div style={{ height: 8, width: v, background: theme.palette.primary.main, borderRadius: 2 }} />
+              </div>
+            ))}
+          </div>
+        </Card>
+        <Card theme={theme} padding={sp[6]}>
+          <h4 style={{ ...theme.typography.h5, margin: 0, marginBottom: sp[4] }}>Radius</h4>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: sp[4] }}>
+            {Object.entries(radii).map(([k, v]) => (
+              <div key={k} style={{ textAlign: 'center' }}>
+                <div style={{ width: 72, height: 72, margin: '0 auto', background: theme.palette.primary.lighter, border: `1.5px solid ${theme.palette.primary.light}`, borderRadius: v }} />
+                <div style={{ ...theme.typography.small, fontFamily: 'ui-monospace, monospace', marginTop: sp[2] }}>{k}</div>
+                <div style={{ ...theme.typography.xSmall, color: theme.tokens.text.muted, fontFamily: 'ui-monospace, monospace' }}>{v}</div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: sp[6] }}>
+        <Card theme={theme} padding={sp[6]}>
+          <h4 style={{ ...theme.typography.h5, margin: 0, marginBottom: sp[4] }}>Shadow</h4>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: sp[4] }}>
+            {Object.entries(shadows).map(([k, v]) => (
+              <div key={k} style={{ textAlign: 'center' }}>
+                <div style={{ width: 72, height: 72, margin: '0 auto', background: theme.tokens.surfaces.panel, border: `1px solid ${theme.tokens.border.subtle}`, borderRadius: radii.md, boxShadow: v === 'none' ? 'none' : v }} />
+                <div style={{ ...theme.typography.small, fontFamily: 'ui-monospace, monospace', marginTop: sp[2] }}>{k}</div>
+              </div>
+            ))}
+          </div>
+        </Card>
+        <Card theme={theme} padding={sp[6]}>
+          <h4 style={{ ...theme.typography.h5, margin: 0, marginBottom: sp[4] }}>Motion</h4>
+          <div style={{ marginBottom: sp[4] }}>
+            <div style={{ ...theme.typography.smallBold, marginBottom: sp[2] }}>Duration</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: sp[2] }}>
+              {Object.entries(motion.duration).map(([k, v]) => (
+                <div key={k} style={{ padding: sp[2], borderRadius: radii.sm, background: theme.tokens.surfaces.subtle, textAlign: 'center' }}>
+                  <div style={{ ...theme.typography.xSmall, fontFamily: 'ui-monospace, monospace' }}>{k}</div>
+                  <div style={{ ...theme.typography.xSmall, color: theme.tokens.text.muted }}>{v}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div>
+            <div style={{ ...theme.typography.smallBold, marginBottom: sp[2] }}>Easing</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: sp[1] }}>
+              {Object.entries(motion.ease).map(([k, v]) => (
+                <div key={k} style={{ display: 'flex', gap: sp[3] }}>
+                  <span style={{ ...theme.typography.xSmall, fontFamily: 'ui-monospace, monospace', minWidth: 72 }}>{k}</span>
+                  <span style={{ ...theme.typography.xSmall, color: theme.tokens.text.muted, fontFamily: 'ui-monospace, monospace' }}>{v}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </Card>
+      </div>
+    </Section>
+  );
+}
+
+function FoundationsShift({ theme }) {
+  const sp = theme.tokens.spacing;
+  const shift = theme.tokens.shift;
+  return (
+    <Section id="shift" eyebrow="Foundations · Domain" title="Shift colors" theme={theme}
+      description="Categorical color set for shift types. These live outside the MUI palette in a dedicated shiftColors token group — accessed via theme.tokens.shift.day, etc.">
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: sp[4] }}>
+        {Object.entries(shift).map(([k, v]) => (
+          <Card key={k} theme={theme} padding={0}>
+            <div style={{ background: v.bg, padding: `${sp[5]} ${sp[5]}`, borderTopLeftRadius: theme.tokens.radius.lg, borderTopRightRadius: theme.tokens.radius.lg }}>
+              <div style={{ ...theme.typography.smallBold, color: v.fg, textTransform: 'capitalize' }}>{k} shift</div>
+              <div style={{ ...theme.typography.xSmall, color: v.fg, opacity: 0.8 }}>7:00 AM — 7:00 PM</div>
+            </div>
+            <div style={{ padding: sp[4], display: 'flex', flexDirection: 'column', gap: 4 }}>
+              {['bg','fg','accent'].map(prop => (
+                <div key={prop} style={{ display: 'flex', gap: sp[2], alignItems: 'center' }}>
+                  <div style={{ width: 16, height: 16, background: v[prop], borderRadius: 3, border: `1px solid ${theme.tokens.border.subtle}` }} />
+                  <span style={{ ...theme.typography.xSmall, fontFamily: 'ui-monospace, monospace', color: theme.tokens.text.muted }}>{prop}  {v[prop]}</span>
+                </div>
+              ))}
+            </div>
+          </Card>
+        ))}
+      </div>
+    </Section>
+  );
+}
+
+function ComponentsButtons({ theme }) {
+  const sp = theme.tokens.spacing;
+  return (
+    <Section id="components-buttons" eyebrow="Components" title="Buttons" theme={theme}
+      description="Contained, outlined, text, and soft variants. Three sizes. Icons inherit the button's text color via currentColor — the same contrast token applied to the label.">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: sp[5] }}>
+        {['primary', 'secondary', 'error', 'success'].map(color => (
+          <Card key={color} theme={theme} padding={sp[5]}>
+            <div style={{ ...theme.typography.smallBold, textTransform: 'capitalize', marginBottom: sp[3], color: theme.tokens.text.muted }}>{color}</div>
+            <div style={{ display: 'flex', gap: sp[3], flexWrap: 'wrap', alignItems: 'center', marginBottom: sp[3] }}>
+              <Button theme={theme} color={color} variant="contained">Contained</Button>
+              <Button theme={theme} color={color} variant="outlined">Outlined</Button>
+              <Button theme={theme} color={color} variant="text">Text</Button>
+              <Button theme={theme} color={color} variant="soft">Soft</Button>
+              <Button theme={theme} color={color} variant="contained" disabled>Disabled</Button>
+              <Button theme={theme} color={color} variant="contained" size="small">Small</Button>
+              <Button theme={theme} color={color} variant="contained" size="large">Large</Button>
+            </div>
+            <div style={{ display: 'flex', gap: sp[3], flexWrap: 'wrap', alignItems: 'center' }}>
+              <Button theme={theme} color={color} variant="contained" startIcon={Icon.plus()}>Add</Button>
+              <Button theme={theme} color={color} variant="outlined" startIcon={Icon.plus()}>Add</Button>
+              <Button theme={theme} color={color} variant="text" endIcon={Icon.arrowRight()}>Continue</Button>
+              <Button theme={theme} color={color} variant="soft" startIcon={Icon.check()}>Confirm</Button>
+              <Button theme={theme} color={color} variant="contained" size="small" startIcon={Icon.plus()}>Small</Button>
+              <Button theme={theme} color={color} variant="contained" size="large" endIcon={Icon.arrowRight()}>Large</Button>
+            </div>
+          </Card>
+        ))}
+      </div>
+    </Section>
+  );
+}
+
+function ComponentsInputs({ theme }) {
+  const sp = theme.tokens.spacing;
+  return (
+    <Section id="components-inputs" eyebrow="Components" title="Form controls" theme={theme}
+      description="Text fields, switches, checkboxes, and radios. Focus and error states wired to semantic tokens.">
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: sp[5] }}>
+        <Card theme={theme} padding={sp[6]}>
+          <h4 style={{ ...theme.typography.h5, margin: 0, marginBottom: sp[4] }}>Text field</h4>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: sp[4] }}>
+            <TextField theme={theme} label="Full name" placeholder="Dr. Jane Smith" fullWidth />
+            <TextField theme={theme} label="Facility" placeholder="Search facilities" startAdornment={Icon.search(theme.tokens.text.muted)} fullWidth />
+            <TextField theme={theme} label="Email" value="jane@m7health.com" helperText="Invalid email address" error fullWidth />
+            <TextField theme={theme} label="Read only" value="Disabled value" disabled fullWidth />
+          </div>
+        </Card>
+        <Card theme={theme} padding={sp[6]}>
+          <h4 style={{ ...theme.typography.h5, margin: 0, marginBottom: sp[4] }}>Selection</h4>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: sp[4] }}>
+            <div>
+              <div style={{ ...theme.typography.smallBold, marginBottom: sp[2] }}>Switch</div>
+              <div style={{ display: 'flex', gap: sp[5], flexWrap: 'wrap' }}>
+                <Switch theme={theme} checked label="Auto-approve requests" />
+                <Switch theme={theme} label="Notifications" />
+                <Switch theme={theme} checked disabled label="Locked on" />
+              </div>
+            </div>
+            <div>
+              <div style={{ ...theme.typography.smallBold, marginBottom: sp[2] }}>Checkbox</div>
+              <div style={{ display: 'flex', gap: sp[5], flexWrap: 'wrap' }}>
+                <Checkbox theme={theme} checked label="Day shifts" />
+                <Checkbox theme={theme} label="Night shifts" />
+                <Checkbox theme={theme} disabled label="Call shifts" />
+              </div>
+            </div>
+            <div>
+              <div style={{ ...theme.typography.smallBold, marginBottom: sp[2] }}>Radio</div>
+              <div style={{ display: 'flex', gap: sp[5], flexWrap: 'wrap' }}>
+                <Radio theme={theme} checked label="Full-time" />
+                <Radio theme={theme} label="Per diem" />
+                <Radio theme={theme} label="Contract" />
+              </div>
+            </div>
+          </div>
+        </Card>
+      </div>
+    </Section>
+  );
+}
+
+function ComponentsFeedback({ theme }) {
+  const sp = theme.tokens.spacing;
+  return (
+    <Section id="components-feedback" eyebrow="Components" title="Feedback" theme={theme}
+      description="Alerts, chips, and tooltips across semantic states.">
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: sp[5] }}>
+        <Card theme={theme} padding={sp[6]}>
+          <h4 style={{ ...theme.typography.h5, margin: 0, marginBottom: sp[4] }}>Alerts</h4>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: sp[3] }}>
+            <Alert theme={theme} severity="success" title="Schedule published">All 24 shifts assigned for June.</Alert>
+            <Alert theme={theme} severity="info">3 staff have pending PTO requests.</Alert>
+            <Alert theme={theme} severity="warning" title="Coverage gap">Night shift Friday is understaffed.</Alert>
+            <Alert theme={theme} severity="error" title="Publish failed">Unable to publish schedule.</Alert>
+          </div>
+        </Card>
+        <Card theme={theme} padding={sp[6]}>
+          <h4 style={{ ...theme.typography.h5, margin: 0, marginBottom: sp[4] }}>Chips</h4>
+          <div style={{ display: 'flex', gap: sp[2], flexWrap: 'wrap', marginBottom: sp[4] }}>
+            <Chip theme={theme} label="Default" />
+            <Chip theme={theme} color="primary" label="Primary" />
+            <Chip theme={theme} color="success" label="Approved" />
+            <Chip theme={theme} color="warning" label="Pending" />
+            <Chip theme={theme} color="error" label="Rejected" />
+            <Chip theme={theme} color="info" label="Info" />
+          </div>
+          <div style={{ display: 'flex', gap: sp[2], flexWrap: 'wrap', marginBottom: sp[4] }}>
+            <Chip theme={theme} variant="outlined" label="Outlined" />
+            <Chip theme={theme} variant="outlined" color="primary" label="ICU" />
+            <Chip theme={theme} variant="outlined" color="success" label="On duty" />
+            <Chip theme={theme} color="primary" label="Dismissable" onDelete />
+          </div>
+          <div style={{ ...theme.typography.smallBold, marginBottom: sp[2] }}>Tooltip</div>
+          <div style={{ paddingTop: 32 }}>
+            <TooltipDemo theme={theme} label="This action is permanent">
+              <Button theme={theme} variant="outlined" color="secondary">Hover me</Button>
+            </TooltipDemo>
+          </div>
+        </Card>
+      </div>
+    </Section>
+  );
+}
+
+function ComponentsComposite({ theme }) {
+  const sp = theme.tokens.spacing;
+  const shift = theme.tokens.shift;
+  return (
+    <Section id="components-composite" eyebrow="Components" title="Composed patterns" theme={theme}
+      description="How the tokens and primitives come together in real product surfaces.">
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: sp[6] }}>
+        <Card theme={theme} padding={sp[6]}>
+          <h4 style={{ ...theme.typography.h5, margin: 0, marginBottom: sp[4] }}>Shift tiles</h4>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: sp[2] }}>
+            {[['day', '7A – 7P'], ['night', '7P – 7A'], ['vacation', 'PTO'], ['education', 'In-service']].map(([kind, label]) => (
+              <div key={kind} style={{ background: shift[kind].bg, color: shift[kind].fg, borderLeft: `3px solid ${shift[kind].accent}`, padding: `${sp[3]} ${sp[4]}`, borderRadius: theme.tokens.radius.sm }}>
+                <div style={{ ...theme.typography.smallBold, textTransform: 'capitalize' }}>{kind}</div>
+                <div style={{ ...theme.typography.xSmall, opacity: 0.85 }}>{label}</div>
+              </div>
+            ))}
+          </div>
+        </Card>
+        <Card theme={theme} padding={0} elevated>
+          <div style={{ padding: sp[5], borderBottom: `1px solid ${theme.tokens.border.subtle}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ ...theme.typography.h5, color: theme.tokens.text.primary }}>Approve PTO request</div>
+            <span style={{ cursor: 'pointer', color: theme.tokens.text.muted }}>{Icon.close()}</span>
+          </div>
+          <div style={{ padding: sp[5] }}>
+            <div style={{ ...theme.typography.body2, color: theme.tokens.text.secondary, marginBottom: sp[4] }}>
+              Maria Chen requested <b>3 days off</b> (June 12–14). Approving triggers coverage checks.
+            </div>
+            <Alert theme={theme} severity="warning">This overlaps with 2 scheduled shifts.</Alert>
+          </div>
+          <div style={{ padding: sp[5], borderTop: `1px solid ${theme.tokens.border.subtle}`, display: 'flex', gap: sp[2], justifyContent: 'flex-end' }}>
+            <Button theme={theme} variant="text" color="secondary">Cancel</Button>
+            <Button theme={theme} variant="contained">Approve</Button>
+          </div>
+        </Card>
+      </div>
+    </Section>
+  );
+}
+
+Object.assign(window, { FoundationsColor, FoundationsType, FoundationsSpacing, FoundationsShift, ComponentsButtons, ComponentsInputs, ComponentsFeedback, ComponentsComposite });
+  </script>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       HANDOFF SECTION — generated theme.ts + legacy alias map
+       Source: project/tokens/spec-handoff.jsx
+       ═══════════════════════════════════════════════════════════════ -->
+  <script type="text/babel">
+function HandoffSection({ theme, currentNeutralKey, currentShiftKey }) {
+  const sp = theme.tokens.spacing;
+  const [copied, setCopied] = useState(false);
+
+  const themeSnippet = `// theme.ts — generated from M7 Design System v1.1
+// Drop into frontend/src/common/theming/index.ts (MUI v5 compatible)
+// Generated: ${new Date().toISOString().slice(0,10)}
+
+import { createTheme } from "@mui/material/styles";
+import { fontFamily } from "./fonts";
+
+// TypeScript augmentation — required for lighter + tertiary
+// declare module "@mui/material/styles" {
+//   interface PaletteColor { lighter?: string; }
+//   interface SimplePaletteColorOptions { lighter?: string; }
+//   interface Palette { tertiary: PaletteColor; }
+//   interface PaletteOptions { tertiary?: PaletteColorOptions; }
+// }
+
+// --- NEUTRAL SCALE (${currentNeutralKey}) -------------------------------------
+const neutral = ${JSON.stringify(theme.tokens.neutrals, null, 2)};
+
+// --- BRAND ------------------------------------------------------------------
+const brand = {
+  purple: { main: "${theme.palette.primary.main}", light: "${theme.palette.primary.light}",
+            dark: "${theme.palette.primary.dark}", lighter: "${theme.palette.primary.lighter}" },
+};
+
+// --- SEMANTIC ---------------------------------------------------------------
+const success = ${JSON.stringify(theme.palette.success, null, 2)};
+const warning = ${JSON.stringify(theme.palette.warning, null, 2)};
+const error   = ${JSON.stringify(theme.palette.error, null, 2)};
+const info    = ${JSON.stringify(theme.palette.info, null, 2)};
+
+// --- SHIFT COLORS (outside palette) -----------------------------------------
+export const shiftColors = ${JSON.stringify(theme.tokens.shift, null, 2)};
+
+// --- THEME ------------------------------------------------------------------
+export const theme = createTheme({
+  palette: {
+    mode: "${theme.palette.mode}",
+    primary:   { main: brand.purple.main, light: brand.purple.light,
+                 dark: brand.purple.dark, contrastText: "#FFFFFF" },
+    secondary: { main: "${theme.palette.secondary.main}", contrastText: "${theme.palette.secondary.contrastText}" },
+    success, warning, error, info,
+    grey: { 50: neutral[50], 100: neutral[100], 200: neutral[200], 300: neutral[300],
+            400: neutral[400], 500: neutral[500], 600: neutral[600], 700: neutral[700],
+            800: neutral[800], 900: neutral[900] },
+    text: {
+      primary:   "${theme.tokens.text.primary}",
+      secondary: "${theme.tokens.text.secondary}",
+      disabled:  "${theme.tokens.text.disabled}",
+    },
+    background: {
+      default: "${theme.tokens.surfaces.canvas}",
+      paper:   "${theme.tokens.surfaces.panel}",
+    },
+    divider: "${theme.tokens.border.subtle}",
+  },
+  typography: { fontFamily, /* h1–h6, body1/2, subtitle1/2, caption, overline, +customs */ },
+  shape:   { borderRadius: 8 },
+  spacing: 4,
+});
+`;
+
+  return (
+    <Section id="handoff" eyebrow="Engineering handoff" title="Generated theme.ts" theme={theme}
+      description="This prototype is the spec. The code below is the shape of the theme file engineers should drop into the repo. Use the Tweaks panel or mode toggle to regenerate for dark mode or alternate neutral scales.">
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: sp[6], marginBottom: sp[8] }}>
+        <Card theme={theme} padding={sp[6]}>
+          <h4 style={{ ...theme.typography.h5, margin: 0, marginBottom: sp[3] }}>Gaps resolved</h4>
+          <ul style={{ ...theme.typography.body2, color: theme.tokens.text.secondary, paddingLeft: 20, margin: 0, lineHeight: 1.7 }}>
+            <li><b>Primary swap:</b> primary is darkPurple (#5B43AC), secondary is black. MUI defaults (Button, Switch) are brand-colored.</li>
+            <li><b>Tertiary:</b> brandGreen (#CAF036) promoted to a first-class <code style={{ fontFamily: 'ui-monospace, monospace' }}>theme.palette.tertiary</code> role.</li>
+            <li><b>Neutrals:</b> 10+ overlapping grays collapsed into a 14-stop scale ({currentNeutralKey}).</li>
+            <li><b>Semantic roles:</b> success, warning, error, info each have lighter/light/main/dark + contrastText.</li>
+            <li><b>Shift colors:</b> extracted from palette into <code style={{ fontFamily: 'ui-monospace, monospace' }}>theme.tokens.shift</code> — categorical, not UI role.</li>
+            <li><b>Typography:</b> every variant has explicit size/weight/line-height/letter-spacing. Inter body, Inter Tight display.</li>
+            <li><b>Spacing:</b> 4px base.</li>
+            <li><b>Radius/Shadow:</b> explicit scales + trimmed 5-level shadow set.</li>
+            <li><b>Motion:</b> duration + easing tokens mapped onto MUI transitions.</li>
+            <li><b>Dark mode:</b> all tokens are mode-aware with light-shifting and tonal inversion.</li>
+          </ul>
+        </Card>
+        <Card theme={theme} padding={sp[6]}>
+          <h4 style={{ ...theme.typography.h5, margin: 0, marginBottom: sp[3] }}>Legacy → new alias map</h4>
+          <p style={{ ...theme.typography.xSmall, color: theme.tokens.text.muted, margin: `0 0 ${sp[3]}` }}>
+            Replace these old token references in existing components:
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: sp[2] }}>
+            {[
+              ['colors.black', 'neutral[900]'],
+              ['colors.darkGray', 'neutral[500] · text.muted'],
+              ['colors.borderGrey', 'neutral[200] · border.default'],
+              ['colors.lightGray', 'neutral[50] · surfaces.subtle'],
+              ['colors.seaShell', 'neutral[100] · border.subtle'],
+              ['colors.darkPurple', 'primary.main'],
+              ['colors.lightPurple', 'primary.light'],
+              ['colors.backgroundLightPurple', 'primary.lighter'],
+              ['colors.successMain', 'success.main'],
+              ['colors.redAlert', 'error.main'],
+              ['colors.warning', 'warning.lighter'],
+              ['colors.warningText', 'warning.contrastText'],
+              ['colors.dayShift', 'shiftColors.day.bg'],
+              ['colors.nightShift', 'shiftColors.night.bg'],
+            ].map(([from, to]) => (
+              <React.Fragment key={from}>
+                <span style={{ ...theme.typography.xSmall, fontFamily: 'ui-monospace, monospace', color: theme.tokens.text.muted, textDecoration: 'line-through' }}>{from}</span>
+                <span style={{ ...theme.typography.xSmall, fontFamily: 'ui-monospace, monospace', color: theme.tokens.text.primary }}>{to}</span>
+              </React.Fragment>
+            ))}
+          </div>
+        </Card>
+      </div>
+
+      <Card theme={theme} padding={0}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: `${sp[3]} ${sp[5]}`, borderBottom: `1px solid ${theme.tokens.border.subtle}`, background: theme.tokens.surfaces.subtle, borderTopLeftRadius: theme.tokens.radius.lg, borderTopRightRadius: theme.tokens.radius.lg }}>
+          <div style={{ display: 'flex', gap: sp[3], alignItems: 'center' }}>
+            <span style={{ ...theme.typography.smallBold, color: theme.tokens.text.primary, fontFamily: 'ui-monospace, monospace' }}>theme.ts</span>
+            <Chip theme={theme} label={currentNeutralKey} size="small" color="primary" />
+            <Chip theme={theme} label={theme.palette.mode} size="small" />
+          </div>
+          <Button theme={theme} variant="outlined" color="secondary" size="small" onClick={() => {
+            navigator.clipboard.writeText(themeSnippet);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 1400);
+          }}>{copied ? 'Copied ✓' : 'Copy'}</Button>
+        </div>
+        <pre style={{ margin: 0, padding: sp[5], overflow: 'auto', maxHeight: 480,
+          background: theme.tokens.neutrals[900], color: theme.tokens.neutrals[100],
+          fontSize: 12, lineHeight: 1.55, fontFamily: 'ui-monospace, monospace',
+          borderBottomLeftRadius: theme.tokens.radius.lg, borderBottomRightRadius: theme.tokens.radius.lg }}>{themeSnippet}</pre>
+      </Card>
+    </Section>
+  );
+}
+
+Object.assign(window, { HandoffSection });
+  </script>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       APP SHELL — Nav, Header, TweaksPanel, Hero, App root
+       Source: project/tokens/app.jsx
+       ═══════════════════════════════════════════════════════════════ -->
+  <script type="text/babel">
+const DEFAULTS = {
+  "neutralKey": "brand-tinted",
+  "shiftKey": "refined",
+  "mode": "light"
+};
+
+function useThemeState() {
+  const [settings, setSettings] = useState(() => {
+    try {
+      const saved = localStorage.getItem('m7ds-settings');
+      if (saved) return { ...DEFAULTS, ...JSON.parse(saved) };
+    } catch {}
+    return DEFAULTS;
+  });
+  useEffect(() => {
+    try { localStorage.setItem('m7ds-settings', JSON.stringify(settings)); } catch {}
+  }, [settings]);
+  const theme = useMemo(() => window.M7ThemeBuilder.buildTheme(settings), [settings]);
+  return { theme, settings, setSettings };
+}
+
+function TweaksPanel({ visible, settings, setSettings, theme, onClose }) {
+  if (!visible) return null;
+  const sp = theme.tokens.spacing;
+  const Row = ({ label, children }) => (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: sp[2], marginBottom: sp[4] }}>
+      <div style={{ ...theme.typography.xSmall, textTransform: 'uppercase', letterSpacing: '0.06em', color: theme.tokens.text.muted, fontWeight: 600 }}>{label}</div>
+      {children}
+    </div>
+  );
+  const Pill = ({ active, onClick, children }) => (
+    <button onClick={onClick} style={{
+      padding: `${sp[2]} ${sp[3]}`, borderRadius: theme.tokens.radius.sm,
+      border: `1px solid ${active ? theme.palette.primary.main : theme.tokens.border.default}`,
+      background: active ? theme.palette.primary.lighter : theme.tokens.surfaces.panel,
+      color: active ? theme.palette.primary.dark : theme.tokens.text.primary,
+      ...theme.typography.small, fontWeight: 500, cursor: 'pointer', textTransform: 'capitalize',
+    }}>{children}</button>
+  );
+
+  return (
+    <div style={{ position: 'fixed', right: 20, bottom: 20, width: 320, zIndex: 100,
+      background: theme.tokens.surfaces.panel, border: `1px solid ${theme.tokens.border.default}`,
+      borderRadius: theme.tokens.radius.lg, boxShadow: theme.tokens.shadow.xl, padding: sp[5] }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: sp[4] }}>
+        <div style={{ ...theme.typography.h6, color: theme.tokens.text.primary }}>Tweaks</div>
+        <span onClick={onClose} style={{ cursor: 'pointer', color: theme.tokens.text.muted, display: 'flex' }}>{Icon.close()}</span>
+      </div>
+      <Row label="Neutral scale">
+        <div style={{ display: 'flex', gap: sp[2], flexWrap: 'wrap' }}>
+          {['brand-tinted', 'cool', 'warm'].map(k => (
+            <Pill key={k} active={settings.neutralKey === k} onClick={() => setSettings({ ...settings, neutralKey: k })}>{k}</Pill>
+          ))}
+        </div>
+      </Row>
+      <Row label="Shift color set">
+        <div style={{ display: 'flex', gap: sp[2] }}>
+          {['refined', 'legacy'].map(k => (
+            <Pill key={k} active={settings.shiftKey === k} onClick={() => setSettings({ ...settings, shiftKey: k })}>{k}</Pill>
+          ))}
+        </div>
+      </Row>
+      <Row label="Mode">
+        <div style={{ display: 'flex', gap: sp[2] }}>
+          {['light', 'dark'].map(k => (
+            <Pill key={k} active={settings.mode === k} onClick={() => setSettings({ ...settings, mode: k })}>{k}</Pill>
+          ))}
+        </div>
+      </Row>
+      <div style={{ ...theme.typography.xSmall, color: theme.tokens.text.muted, marginTop: sp[3], lineHeight: 1.5 }}>
+        Changes regenerate the theme snippet in the Handoff section.
+      </div>
+    </div>
+  );
+}
+
+function Nav({ theme, activeId }) {
+  const sp = theme.tokens.spacing;
+  const groups = [
+    { label: 'Foundations', items: [
+      { id: 'color', label: 'Color' }, { id: 'type', label: 'Typography' },
+      { id: 'spacing', label: 'Spacing · Radius · Shadow' }, { id: 'shift', label: 'Shift colors' },
+    ]},
+    { label: 'Components', items: [
+      { id: 'components-buttons', label: 'Buttons' }, { id: 'components-inputs', label: 'Form controls' },
+      { id: 'components-feedback', label: 'Feedback' }, { id: 'components-composite', label: 'Composed patterns' },
+    ]},
+    { label: 'Handoff', items: [{ id: 'handoff', label: 'theme.ts + migration' }] },
+  ];
+  return (
+    <nav style={{ position: 'sticky', top: 64, alignSelf: 'flex-start', width: 240, padding: sp[5],
+      borderRight: `1px solid ${theme.tokens.border.subtle}`, height: 'calc(100vh - 64px)', overflow: 'auto' }}>
+      {groups.map(g => (
+        <div key={g.label} style={{ marginBottom: sp[6] }}>
+          <div style={{ ...theme.typography.overline, color: theme.tokens.text.muted, marginBottom: sp[2] }}>{g.label}</div>
+          {g.items.map(it => (
+            <a key={it.id} href={`#${it.id}`} style={{
+              display: 'block', padding: `${sp[2]} ${sp[3]}`, borderRadius: theme.tokens.radius.sm,
+              ...theme.typography.small,
+              color: activeId === it.id ? theme.palette.primary.dark : theme.tokens.text.secondary,
+              background: activeId === it.id ? theme.palette.primary.lighter : 'transparent',
+              fontWeight: activeId === it.id ? 600 : 400, textDecoration: 'none', marginBottom: 2,
+            }}>{it.label}</a>
+          ))}
+        </div>
+      ))}
+    </nav>
+  );
+}
+
+function Header({ theme, mode, onModeChange, onTweaksToggle }) {
+  const sp = theme.tokens.spacing;
+  const ToggleBtn = ({ value, children, title }) => {
+    const active = mode === value;
+    return (
+      <button onClick={() => onModeChange(value)} title={title} aria-label={title} aria-pressed={active} style={{
+        width: 32, height: 28, display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+        background: active ? theme.tokens.surfaces.panel : 'transparent',
+        color: active ? theme.tokens.text.primary : theme.tokens.text.muted,
+        border: 'none', borderRadius: theme.tokens.radius.sm,
+        boxShadow: active ? theme.tokens.shadow.sm : 'none',
+        cursor: 'pointer', padding: 0,
+      }}>{children}</button>
+    );
+  };
+  const SunIcon = (<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>);
+  const MoonIcon = (<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>);
+  return (
+    <header style={{ position: 'sticky', top: 0, zIndex: 50, height: 64,
+      display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: `0 ${sp[6]}`,
+      background: theme.tokens.surfaces.panel, borderBottom: `1px solid ${theme.tokens.border.subtle}` }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: sp[3] }}>
+        <div style={{ width: 28, height: 28, borderRadius: theme.tokens.radius.sm,
+          background: theme.palette.primary.main, color: '#fff',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontFamily: theme.typography.fontFamily, fontWeight: 700, fontSize: 14 }}>M7</div>
+        <div>
+          <div style={{ ...theme.typography.smallBold, color: theme.tokens.text.primary }}>Design System</div>
+          <div style={{ ...theme.typography.xSmall, color: theme.tokens.text.muted }}>v1.1 · MUI v5</div>
+        </div>
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: sp[3] }}>
+        <div style={{ display: 'inline-flex', gap: 2, padding: 2,
+          background: theme.tokens.surfaces.subtle,
+          border: `1px solid ${theme.tokens.border.subtle}`,
+          borderRadius: theme.tokens.radius.sm }}>
+          <ToggleBtn value="light" title="Light mode">{SunIcon}</ToggleBtn>
+          <ToggleBtn value="dark" title="Dark mode">{MoonIcon}</ToggleBtn>
+        </div>
+        <button onClick={onTweaksToggle} title="Open Tweaks panel" style={{
+          display: 'inline-flex', alignItems: 'center', gap: 6, height: 28, padding: '0 10px',
+          background: theme.tokens.surfaces.subtle, border: `1px solid ${theme.tokens.border.subtle}`,
+          borderRadius: theme.tokens.radius.sm, cursor: 'pointer', color: theme.tokens.text.secondary,
+          ...theme.typography.small,
+        }}>{Icon.tweaks()} Tweaks</button>
+        <Chip theme={theme} color="primary" variant="outlined" size="small" label="Prototype" />
+      </div>
+    </header>
+  );
+}
+
+function Hero({ theme }) {
+  const sp = theme.tokens.spacing;
+  return (
+    <section style={{ padding: `${sp[16]} ${sp[10]}`, borderBottom: `1px solid ${theme.tokens.border.subtle}`, background: theme.tokens.surfaces.canvas }}>
+      <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+        <div style={{ ...theme.typography.overline, color: theme.palette.primary.main, marginBottom: sp[3] }}>M7 Design System · v1.1</div>
+        <h1 style={{ ...theme.typography.displayMd, color: theme.tokens.text.primary, margin: 0, marginBottom: sp[4], maxWidth: 900 }}>
+          A MUI-native component library, tuned to the M7 brand
+        </h1>
+        <p style={{ ...theme.typography.body1, color: theme.tokens.text.secondary, maxWidth: 720, margin: 0, marginBottom: sp[6] }}>
+          Built on top of your current theme in <code style={{ fontFamily: 'ui-monospace, monospace', background: theme.tokens.surfaces.subtle, padding: '2px 6px', borderRadius: 4 }}>frontend/src/common/theming/</code>. Every gap between your custom tokens and MUI v5's design system is filled here. Toggle <b>Tweaks</b> in the toolbar to explore neutral scale and shift color variants.
+        </p>
+        <div style={{ display: 'flex', gap: sp[3] }}>
+          <Button theme={theme} variant="contained" endIcon={Icon.arrowRight()}>View foundations</Button>
+          <Button theme={theme} variant="outlined" color="secondary">Jump to handoff</Button>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function App() {
+  const { theme, settings, setSettings } = useThemeState();
+  const [tweaksVisible, setTweaksVisible] = useState(false);
+  const [activeId, setActiveId] = useState('color');
+
+  useEffect(() => {
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((e) => {
+        if (e.isIntersecting && e.intersectionRatio > 0.3) setActiveId(e.target.id);
+      });
+    }, { rootMargin: '-80px 0px -60% 0px', threshold: [0, 0.3, 0.6] });
+    document.querySelectorAll('section[id]').forEach(el => observer.observe(el));
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    document.body.style.background = theme.tokens.surfaces.canvas;
+    document.body.style.color = theme.tokens.text.primary;
+  }, [theme]);
+
+  return (
+    <div style={{ minHeight: '100vh', background: theme.tokens.surfaces.canvas, color: theme.tokens.text.primary, fontFamily: theme.typography.fontFamily }}>
+      <Header theme={theme} mode={settings.mode}
+        onModeChange={(m) => setSettings({ ...settings, mode: m })}
+        onTweaksToggle={() => setTweaksVisible(v => !v)}
+      />
+      <div style={{ display: 'grid', gridTemplateColumns: '240px 1fr' }}>
+        <Nav theme={theme} activeId={activeId} />
+        <main>
+          <Hero theme={theme} />
+          <FoundationsColor theme={theme} />
+          <FoundationsType theme={theme} />
+          <FoundationsSpacing theme={theme} />
+          <FoundationsShift theme={theme} />
+          <ComponentsButtons theme={theme} />
+          <ComponentsInputs theme={theme} />
+          <ComponentsFeedback theme={theme} />
+          <ComponentsComposite theme={theme} />
+          <HandoffSection theme={theme} currentNeutralKey={settings.neutralKey} currentShiftKey={settings.shiftKey} />
+        </main>
+      </div>
+      <TweaksPanel visible={tweaksVisible} settings={settings} setSettings={setSettings} theme={theme} onClose={() => setTweaksVisible(false)} />
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>
