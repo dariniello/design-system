@@ -11,8 +11,8 @@
   ─────────────
   • Scroll to the "Engineering handoff" section for the generated theme.ts snippet
     and the legacy → new token alias map.
-  • The "Tweaks" panel (bottom-right corner button) lets you swap neutral scale,
-    shift color set, and light/dark mode — the theme.ts snippet updates live.
+  • Use the light/dark toggle in the header to preview mode-aware tokens — the
+    theme.ts snippet updates live.
   • TypeScript module augmentation required for `lighter` and `tertiary` palette
     extensions — see the Custom Extension card in the Color section.
   • This spec targets MUI v5. Do not use v6/v7/v9 APIs.
@@ -31,7 +31,7 @@
   spec-components.jsx — primitive components (Button, Chip, TextField, etc.)
   spec-sections.jsx   — section renderers (FoundationsColor, ComponentsButtons, etc.)
   spec-handoff.jsx    — HandoffSection with generated theme.ts output
-  app.jsx             — App shell, Nav, Header, TweaksPanel
+  app.jsx             — App shell, Nav, Header
 -->
 <html lang="en">
 <head>
@@ -1104,7 +1104,7 @@ export const theme = createTheme({
 
   return (
     <Section id="handoff" eyebrow="Engineering handoff" title="Generated theme.ts" theme={theme}
-      description="This prototype is the spec. The code below is the shape of the theme file engineers should drop into the repo. Use the Tweaks panel or mode toggle to regenerate for dark mode or alternate neutral scales.">
+      description="This prototype is the spec. The code below is the shape of the theme file engineers should drop into the repo. Use the light/dark toggle to regenerate for dark mode.">
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: sp[6], marginBottom: sp[8] }}>
         <Card theme={theme} padding={sp[6]}>
           <h4 style={{ ...theme.typography.h5, margin: 0, marginBottom: sp[3] }}>Gaps resolved</h4>
@@ -1178,7 +1178,7 @@ Object.assign(window, { HandoffSection });
   </script>
 
   <!-- ═══════════════════════════════════════════════════════════════
-       APP SHELL — Nav, Header, TweaksPanel, Hero, App root
+       APP SHELL — Nav, Header, Hero, App root
        Source: project/tokens/app.jsx
        ═══════════════════════════════════════════════════════════════ -->
   <script type="text/babel">
@@ -1201,61 +1201,6 @@ function useThemeState() {
   }, [settings]);
   const theme = useMemo(() => window.M7ThemeBuilder.buildTheme(settings), [settings]);
   return { theme, settings, setSettings };
-}
-
-function TweaksPanel({ visible, settings, setSettings, theme, onClose }) {
-  if (!visible) return null;
-  const sp = theme.tokens.spacing;
-  const Row = ({ label, children }) => (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: sp[2], marginBottom: sp[4] }}>
-      <div style={{ ...theme.typography.xSmall, textTransform: 'uppercase', letterSpacing: '0.06em', color: theme.tokens.text.muted, fontWeight: 600 }}>{label}</div>
-      {children}
-    </div>
-  );
-  const Pill = ({ active, onClick, children }) => (
-    <button onClick={onClick} style={{
-      padding: `${sp[2]} ${sp[3]}`, borderRadius: theme.tokens.radius.sm,
-      border: `1px solid ${active ? theme.palette.primary.main : theme.tokens.border.default}`,
-      background: active ? theme.palette.primary.lighter : theme.tokens.surfaces.panel,
-      color: active ? theme.palette.primary.dark : theme.tokens.text.primary,
-      ...theme.typography.small, fontWeight: 500, cursor: 'pointer', textTransform: 'capitalize',
-    }}>{children}</button>
-  );
-
-  return (
-    <div style={{ position: 'fixed', right: 20, bottom: 20, width: 320, zIndex: 100,
-      background: theme.tokens.surfaces.panel, border: `1px solid ${theme.tokens.border.default}`,
-      borderRadius: theme.tokens.radius.lg, boxShadow: theme.tokens.shadow.xl, padding: sp[5] }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: sp[4] }}>
-        <div style={{ ...theme.typography.h6, color: theme.tokens.text.primary }}>Tweaks</div>
-        <span onClick={onClose} style={{ cursor: 'pointer', color: theme.tokens.text.muted, display: 'flex' }}>{Icon.close()}</span>
-      </div>
-      <Row label="Neutral scale">
-        <div style={{ display: 'flex', gap: sp[2], flexWrap: 'wrap' }}>
-          {['brand-tinted', 'cool', 'warm'].map(k => (
-            <Pill key={k} active={settings.neutralKey === k} onClick={() => setSettings({ ...settings, neutralKey: k })}>{k}</Pill>
-          ))}
-        </div>
-      </Row>
-      <Row label="Shift color set">
-        <div style={{ display: 'flex', gap: sp[2] }}>
-          {['refined', 'legacy'].map(k => (
-            <Pill key={k} active={settings.shiftKey === k} onClick={() => setSettings({ ...settings, shiftKey: k })}>{k}</Pill>
-          ))}
-        </div>
-      </Row>
-      <Row label="Mode">
-        <div style={{ display: 'flex', gap: sp[2] }}>
-          {['light', 'dark'].map(k => (
-            <Pill key={k} active={settings.mode === k} onClick={() => setSettings({ ...settings, mode: k })}>{k}</Pill>
-          ))}
-        </div>
-      </Row>
-      <div style={{ ...theme.typography.xSmall, color: theme.tokens.text.muted, marginTop: sp[3], lineHeight: 1.5 }}>
-        Changes regenerate the theme snippet in the Handoff section.
-      </div>
-    </div>
-  );
 }
 
 function Nav({ theme, activeId }) {
@@ -1292,7 +1237,7 @@ function Nav({ theme, activeId }) {
   );
 }
 
-function Header({ theme, mode, onModeChange, onTweaksToggle }) {
+function Header({ theme, mode, onModeChange }) {
   const sp = theme.tokens.spacing;
   const ToggleBtn = ({ value, children, title }) => {
     const active = mode === value;
@@ -1331,12 +1276,6 @@ function Header({ theme, mode, onModeChange, onTweaksToggle }) {
           <ToggleBtn value="light" title="Light mode">{SunIcon}</ToggleBtn>
           <ToggleBtn value="dark" title="Dark mode">{MoonIcon}</ToggleBtn>
         </div>
-        <button onClick={onTweaksToggle} title="Open Tweaks panel" style={{
-          display: 'inline-flex', alignItems: 'center', gap: 6, height: 28, padding: '0 10px',
-          background: theme.tokens.surfaces.subtle, border: `1px solid ${theme.tokens.border.subtle}`,
-          borderRadius: theme.tokens.radius.sm, cursor: 'pointer', color: theme.tokens.text.secondary,
-          ...theme.typography.small,
-        }}>{Icon.tweaks()} Tweaks</button>
         <Chip theme={theme} color="primary" variant="outlined" size="small" label="Prototype" />
       </div>
     </header>
@@ -1353,11 +1292,10 @@ function Hero({ theme }) {
           A MUI-native component library, tuned to the M7 brand
         </h1>
         <p style={{ ...theme.typography.body1, color: theme.tokens.text.secondary, maxWidth: 720, margin: 0, marginBottom: sp[6] }}>
-          Built on top of your current theme in <code style={{ fontFamily: 'ui-monospace, monospace', background: theme.tokens.surfaces.subtle, padding: '2px 6px', borderRadius: 4 }}>frontend/src/common/theming/</code>. Every gap between your custom tokens and MUI v5's design system is filled here. Toggle <b>Tweaks</b> in the toolbar to explore neutral scale and shift color variants.
+          Built on top of your current theme in <code style={{ fontFamily: 'ui-monospace, monospace', background: theme.tokens.surfaces.subtle, padding: '2px 6px', borderRadius: 4 }}>frontend/src/common/theming/</code>. Every gap between your custom tokens and MUI v5's design system is filled here.
         </p>
         <div style={{ display: 'flex', gap: sp[3] }}>
-          <Button theme={theme} variant="contained" endIcon={Icon.arrowRight()}>View foundations</Button>
-          <Button theme={theme} variant="outlined" color="secondary">Jump to handoff</Button>
+          <Button theme={theme} variant="contained" endIcon={Icon.arrowRight()} onClick={() => window.open('https://github.com/dariniello/design-system', '_blank', 'noopener')}>View package</Button>
         </div>
       </div>
     </section>
@@ -1366,7 +1304,6 @@ function Hero({ theme }) {
 
 function App() {
   const { theme, settings, setSettings } = useThemeState();
-  const [tweaksVisible, setTweaksVisible] = useState(false);
   const [activeId, setActiveId] = useState('color');
 
   useEffect(() => {
@@ -1388,7 +1325,6 @@ function App() {
     <div style={{ minHeight: '100vh', background: theme.tokens.surfaces.canvas, color: theme.tokens.text.primary, fontFamily: theme.typography.fontFamily }}>
       <Header theme={theme} mode={settings.mode}
         onModeChange={(m) => setSettings({ ...settings, mode: m })}
-        onTweaksToggle={() => setTweaksVisible(v => !v)}
       />
       <div style={{ display: 'grid', gridTemplateColumns: '240px 1fr' }}>
         <Nav theme={theme} activeId={activeId} />
@@ -1405,7 +1341,6 @@ function App() {
           <HandoffSection theme={theme} currentNeutralKey={settings.neutralKey} currentShiftKey={settings.shiftKey} />
         </main>
       </div>
-      <TweaksPanel visible={tweaksVisible} settings={settings} setSettings={setSettings} theme={theme} onClose={() => setTweaksVisible(false)} />
     </div>
   );
 }
