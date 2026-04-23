@@ -311,12 +311,33 @@ function TokenLabel({ name, value, theme }) {
   );
 }
 
+// Pick readable text ("#FFFFFF" or "#141319") for a given background color.
+// Uses WCAG relative luminance; threshold tuned so mid-tone colors pick white.
+function pickContrast(bg) {
+  if (!bg || typeof bg !== 'string') return '#141319';
+  let hex = bg.trim();
+  if (hex.startsWith('rgb')) return '#141319';
+  hex = hex.replace('#', '');
+  if (hex.length === 3) hex = hex.split('').map(c => c + c).join('');
+  if (hex.length !== 6) return '#141319';
+  const r = parseInt(hex.slice(0, 2), 16) / 255;
+  const g = parseInt(hex.slice(2, 4), 16) / 255;
+  const b = parseInt(hex.slice(4, 6), 16) / 255;
+  const lin = (c) => c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+  const L = 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+  // Contrast vs white = 1.05 / (L + 0.05); vs #141319 (L≈0.0055) ≈ (L + 0.05) / 0.0555
+  const contrastWhite = 1.05 / (L + 0.05);
+  const contrastBlack = (L + 0.05) / 0.0555;
+  return contrastWhite >= contrastBlack ? '#FFFFFF' : '#141319';
+}
+
 function Swatch({ color, name, value, theme, large, onBrand }) {
   const size = large ? 120 : 72;
+  const fg = onBrand || pickContrast(color);
   return (
     <div style={{ width: '100%' }}>
       <div style={{ height: size, background: color, borderRadius: theme.tokens.radius.md, border: `1px solid ${theme.tokens.border.subtle}`, position: 'relative', overflow: 'hidden' }}>
-        {onBrand && <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: onBrand, ...theme.typography.smallBold }}>Aa</div>}
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: fg, ...theme.typography.smallBold }}>Aa</div>
       </div>
       <div style={{ marginTop: theme.tokens.spacing[2] }}>
         <div style={{ ...theme.typography.small, color: theme.tokens.text.primary, fontWeight: 500 }}>{name}</div>
@@ -513,7 +534,7 @@ function TooltipDemo({ theme, children, label }) {
   );
 }
 
-Object.assign(window, { Section, TokenLabel, Swatch, Button, Icon, Chip, TextField, Switch, Checkbox, Radio, Alert, Card, TooltipDemo });
+Object.assign(window, { Section, TokenLabel, Swatch, Button, Icon, Chip, TextField, Switch, Checkbox, Radio, Alert, Card, TooltipDemo, pickContrast });
   </script>
 
   <!-- ═══════════════════════════════════════════════════════════════
@@ -557,12 +578,15 @@ function FoundationsColor({ theme }) {
           const badgeBg = isMain ? theme.tokens.text.primary : (theme.palette.mode === 'dark' ? theme.tokens.surfaces.raised : theme.tokens.surfaces.panel);
           const badgeFg = isMain ? theme.tokens.surfaces.panel : theme.tokens.text.secondary;
           const badgeBorder = isMain ? theme.tokens.text.primary : theme.tokens.border.strong;
+          const stopFg = window.pickContrast(v);
           return (
             <div key={k} style={{ position: 'relative' }}>
               <div style={{ height: 96, background: v, borderRadius: theme.tokens.radius.md,
                 border: isMain ? `2px solid ${theme.tokens.text.primary}` : `1px solid ${theme.tokens.border.subtle}`,
                 outline: isMain ? `2px solid ${theme.tokens.surfaces.panel}` : 'none', outlineOffset: -4,
-                opacity: isRoled || !roleMap ? 1 : 0.92 }} />
+                opacity: isRoled || !roleMap ? 1 : 0.92,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: stopFg, fontFamily: theme.typography.fontFamily, fontWeight: 600, fontSize: 14 }}>Aa</div>
               <div style={{ marginTop: sp[2] }}>
                 <div style={{ ...theme.typography.small, color: theme.tokens.text.primary, fontWeight: isMain ? 700 : 500, fontFamily: 'ui-monospace, monospace' }}>{k}</div>
                 <div style={{ ...theme.typography.xSmall, color: theme.tokens.text.muted, fontFamily: 'ui-monospace, monospace' }}>{v}</div>
@@ -589,8 +613,8 @@ function FoundationsColor({ theme }) {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: sp[2] }}>
               <Swatch name="lighter" value={pal.lighter} color={pal.lighter} theme={theme} />
               <Swatch name="light" value={pal.light} color={pal.light} theme={theme} />
-              <Swatch name="main" value={pal.main} color={pal.main} theme={theme} onBrand={pal.contrastText} />
-              <Swatch name="dark" value={pal.dark} color={pal.dark} theme={theme} onBrand={pal.contrastText} />
+              <Swatch name="main" value={pal.main} color={pal.main} theme={theme} />
+              <Swatch name="dark" value={pal.dark} color={pal.dark} theme={theme} />
             </div>
           </div>
         );
