@@ -790,6 +790,7 @@ function FoundationsSpacing({ theme }) {
   const radii = theme.tokens.radius;
   const shadows = theme.tokens.shadow;
   const motion = theme.tokens.motion;
+  const [activeShadow, setActiveShadow] = useState(null);
   return (
     <Section id="spacing" eyebrow="Foundations" title="Spacing, Radius, Shadow, Motion" theme={theme}
       description="4px-base spacing scale. Trimmed radius and shadow sets. Motion tokens with durations and easing curves.">
@@ -823,12 +824,37 @@ function FoundationsSpacing({ theme }) {
         <Card theme={theme} padding={sp[6]}>
           <h4 style={{ ...theme.typography.h5, margin: 0, marginBottom: sp[4] }}>Shadow</h4>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: sp[4] }}>
-            {Object.entries(shadows).map(([k, v]) => (
-              <div key={k} style={{ textAlign: 'center' }}>
-                <div style={{ width: 72, height: 72, margin: '0 auto', background: theme.tokens.surfaces.panel, border: `1px solid ${theme.tokens.border.subtle}`, borderRadius: radii.md, boxShadow: v === 'none' ? 'none' : v }} />
-                <div style={{ ...theme.typography.small, fontFamily: 'ui-monospace, monospace', marginTop: sp[2] }}>{k}</div>
-              </div>
-            ))}
+            {Object.entries(shadows).map(([k, v]) => {
+              const isActive = activeShadow === k;
+              return (
+                <button
+                  key={k}
+                  type="button"
+                  onClick={() => setActiveShadow(isActive ? null : k)}
+                  aria-pressed={isActive}
+                  title={`Click to ${isActive ? 'hide' : 'show'} CSS`}
+                  style={{
+                    textAlign: 'center', background: 'transparent', border: 'none',
+                    padding: sp[2], borderRadius: radii.sm, cursor: 'pointer',
+                    outline: isActive ? `2px solid ${theme.palette.primary.main}` : 'none',
+                    outlineOffset: 2,
+                  }}>
+                  <div style={{ width: 72, height: 72, margin: '0 auto', background: theme.tokens.surfaces.panel, border: `1px solid ${theme.tokens.border.subtle}`, borderRadius: radii.md, boxShadow: v === 'none' ? 'none' : v }} />
+                  <div style={{ ...theme.typography.small, fontFamily: 'ui-monospace, monospace', marginTop: sp[2], color: theme.tokens.text.primary, fontWeight: isActive ? 600 : 400 }}>{k}</div>
+                </button>
+              );
+            })}
+          </div>
+          <div style={{ marginTop: sp[4], padding: sp[3], borderRadius: radii.sm,
+            background: theme.tokens.neutrals[900], color: theme.tokens.neutrals[100],
+            fontFamily: 'ui-monospace, monospace', fontSize: 12, lineHeight: 1.5,
+            minHeight: 44, display: 'flex', alignItems: 'center',
+            opacity: activeShadow ? 1 : 0.45, transition: 'opacity 200ms' }}>
+            {activeShadow ? (
+              <span><span style={{ color: theme.tokens.neutrals[400] }}>box-shadow:</span> {shadows[activeShadow]}<span style={{ color: theme.tokens.neutrals[400] }}>;</span></span>
+            ) : (
+              <span style={{ color: theme.tokens.neutrals[400] }}>Click a shadow to view its CSS</span>
+            )}
           </div>
         </Card>
         <Card theme={theme} padding={sp[6]}>
